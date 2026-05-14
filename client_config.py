@@ -6,4 +6,4 @@ CLIENT_TOKENS = [
 ]
 
 # URL Mini App (тот же что в master_config)
-MINI_APP_URL = "https://твой-проект.railway.app/app"
+MINI_APP_URL = "web-production-888763.up.railway.app"
