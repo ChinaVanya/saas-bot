@@ -138,6 +138,34 @@ def deactivate_client(username: str) -> bool:
     return affected > 0
 
 
+def restore_client(username: str) -> bool:
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("UPDATE clients SET is_active=1 WHERE username=?", (username.lower(),))
+    affected = c.rowcount
+    conn.commit()
+    conn.close()
+    return affected > 0
+
+
+def delete_client(username: str) -> bool:
+    conn = get_conn()
+    c = conn.cursor()
+    c.execute("SELECT id FROM clients WHERE username=?", (username.lower(),))
+    row = c.fetchone()
+    if not row:
+        conn.close()
+        return False
+    cid = row["id"]
+    c.execute("DELETE FROM promocodes WHERE client_id=?", (cid,))
+    c.execute("DELETE FROM tracks WHERE client_id=?", (cid,))
+    c.execute("DELETE FROM bot_settings WHERE client_id=?", (cid,))
+    c.execute("DELETE FROM clients WHERE id=?", (cid,))
+    conn.commit()
+    conn.close()
+    return True
+
+
 # ───────────────────────────────────────────
 #  Настройки бота клиента
 # ───────────────────────────────────────────

@@ -20,7 +20,8 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from database.db import (
     init_db, add_client, get_all_clients,
-    deactivate_client, get_client_by_code_and_username
+    deactivate_client, restore_client, delete_client,
+    get_client_by_code_and_username
 )
 from master_config import MASTER_TOKEN, MASTER_IDS, MINI_APP_URL
 
@@ -49,9 +50,11 @@ def is_master(user_id: int) -> bool:
 
 def master_menu_kb():
     kb = InlineKeyboardBuilder()
-    kb.button(text="➕ Добавить клиента",   callback_data="add_client")
-    kb.button(text="📋 Список клиентов",    callback_data="list_clients")
-    kb.button(text="🚫 Отключить клиента",  callback_data="deactivate_client")
+    kb.button(text="➕ Добавить клиента",    callback_data="add_client")
+    kb.button(text="📋 Список клиентов",     callback_data="list_clients")
+    kb.button(text="🚫 Отключить клиента",   callback_data="deactivate_client")
+    kb.button(text="✅ Восстановить клиента", callback_data="restore_client")
+    kb.button(text="🗑 Удалить клиента",      callback_data="delete_client")
     kb.adjust(1)
     return kb.as_markup()
 
@@ -221,27 +224,66 @@ async def cb_deactivate(callback, state: FSMContext):
 
 
 @dp.message(F.text, lambda m: True)
-async def deactivate_input(message: Message, state: FSMContext):
+async def text_input_handler(message: Message, state: FSMContext):
     current = await state.get_state()
-    if current != "deactivate_waiting":
-        return
     if not is_master(message.from_user.id):
         return
 
     username = message.text.strip().lstrip("@").lower()
-    success = deactivate_client(username)
-    await state.clear()
 
-    if success:
-        await message.answer(
-            f"✅ Клиент @{username} отключён. Его бот перестанет работать.",
-            reply_markup=master_menu_kb()
-        )
-    else:
-        await message.answer(
-            f"❌ Клиент @{username} не найден.",
-            reply_markup=master_menu_kb()
-        )
+    if current == "deactivate_waiting":
+        success = deactivate_client(username)
+        await state.clear()
+        if success:
+            await message.answer(f"✅ Клиент @{username} отключён.", reply_markup=master_menu_kb())
+        else:
+            await message.answer(f"❌ Клиент @{username} не найден.", reply_markup=master_menu_kb())
+
+    elif current == "restore_waiting":
+        success = restore_client(username)
+        await state.clear()
+        if success:
+            await message.answer(f"✅ Клиент @{username} восстановлён!", reply_markup=master_menu_kb())
+        else:
+            await message.answer(f"❌ Клиент @{username} не найден.", reply_markup=master_menu_kb())
+
+    elif current == "delete_waiting":
+        success = delete_client(username)
+        await state.clear()
+        if success:
+            await message.answer(f"🗑 Клиент @{username} удалён вместе со всеми данными.", reply_markup=master_menu_kb())
+        else:
+            await message.answer(f"❌ Клиент @{username} не найден.", reply_markup=master_menu_kb())
+
+
+
+# ───────────────────────────────────────────
+#  Восстановление клиента
+# ───────────────────────────────────────────
+
+@dp.callback_query(F.data == "restore_client")
+async def cb_restore(callback, state: FSMContext):
+    if not is_master(callback.from_user.id):
+        return
+    await callback.message.answer("✅ Введи @username клиента которого нужно восстановить:")
+    await state.set_state("restore_waiting")
+    await callback.answer()
+
+
+# ───────────────────────────────────────────
+#  Удаление клиента
+# ───────────────────────────────────────────
+
+@dp.callback_query(F.data == "delete_client")
+async def cb_delete(callback, state: FSMContext):
+    if not is_master(callback.from_user.id):
+        return
+    await callback.message.answer(
+        "🗑 Введи @username клиента которого нужно УДАЛИТЬ"
+        "⚠️ Все данные (промокоды, треки, настройки) будут удалены безвозвратно!"
+    )
+    await state.set_state("delete_waiting")
+    await callback.answer()
 
 
 # ───────────────────────────────────────────
