@@ -196,3 +196,18 @@ async def health():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+
+# ── Авторизация через Mini App ──
+
+class AuthRequest(BaseModel):
+    code: str
+    username: str
+
+@app.post("/api/auth")
+async def api_auth(body: AuthRequest):
+    from database.db import get_client_by_code_and_username
+    client = await get_client_by_code_and_username(body.code, body.username)
+    if not client:
+        raise HTTPException(status_code=401, detail="Неверный код или аккаунт не совпадает")
+    return {"client_id": client["id"], "bot_name": client["bot_name"]}

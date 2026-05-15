@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Панель управления ботом</title>
+<title>Панель управления</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
 
   :root {
-    --bg:        #0f0f13;
-    --surface:   #1a1a24;
-    --surface2:  #22222f;
-    --border:    #2e2e3e;
-    --accent:    #6c63ff;
-    --accent2:   #a78bfa;
-    --green:     #22c55e;
-    --red:       #ef4444;
-    --text:      #f0f0f5;
-    --muted:     #7070a0;
-    --radius:    14px;
+    --bg:       #0f0f13;
+    --surface:  #1a1a24;
+    --surface2: #22222f;
+    --border:   #2e2e3e;
+    --accent:   #6c63ff;
+    --accent2:  #a78bfa;
+    --green:    #22c55e;
+    --red:      #ef4444;
+    --text:     #f0f0f5;
+    --muted:    #7070a0;
+    --radius:   14px;
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
@@ -29,10 +29,88 @@
     background: var(--bg);
     color: var(--text);
     min-height: 100vh;
-    padding-bottom: 80px;
   }
 
-  /* ── Шапка ── */
+  /* ── Экран входа ── */
+  .login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 30px 24px;
+  }
+
+  .login-logo {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+
+  .login-title {
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
+    color: var(--muted);
+    margin-bottom: 32px;
+    text-align: center;
+  }
+
+  .login-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    color: var(--text);
+    font-family: 'Manrope', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-align: center;
+    outline: none;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    transition: border-color .2s;
+  }
+
+  .login-input:focus { border-color: var(--accent); }
+  .login-input::placeholder { letter-spacing: 0; font-weight: 400; font-size: 14px; color: var(--muted); }
+
+  .login-btn {
+    width: 100%;
+    padding: 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #fff;
+    font-family: 'Manrope', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(108,99,255,.4);
+    transition: all .2s;
+  }
+
+  .login-btn:active { transform: scale(.97); }
+  .login-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .login-error {
+    margin-top: 14px;
+    color: var(--red);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    min-height: 20px;
+  }
+
+  /* ── Основной интерфейс ── */
+  .main-screen { display: none; padding-bottom: 80px; }
+
   .header {
     background: var(--surface);
     border-bottom: 1px solid var(--border);
@@ -40,15 +118,10 @@
     position: sticky; top: 0; z-index: 100;
   }
   .header-top { display: flex; align-items: center; justify-content: space-between; }
-  .logo { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo { font-size: 18px; font-weight: 800; }
   .logo span { color: var(--accent2); }
-  .status-dot {
-    width: 8px; height: 8px; border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
-  }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
 
-  /* ── Табы ── */
   .tabs {
     display: flex; gap: 4px;
     background: var(--surface2);
@@ -63,382 +136,250 @@
     color: var(--muted);
     font-family: 'Manrope', sans-serif;
     font-size: 12px; font-weight: 600;
-    cursor: pointer;
-    transition: all .2s;
+    cursor: pointer; transition: all .2s;
   }
-  .tab.active {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 2px 12px rgba(108,99,255,.4);
-  }
+  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 12px rgba(108,99,255,.4); }
 
-  /* ── Контент ── */
   .page { display: none; padding: 20px; }
   .page.active { display: block; }
 
-  /* ── Карточка ── */
-  .card {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 18px;
-    margin-bottom: 14px;
-  }
-  .card-title {
-    font-size: 13px; font-weight: 700;
-    color: var(--muted); letter-spacing: .5px;
-    text-transform: uppercase;
-    margin-bottom: 14px;
-  }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
+  .card-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 14px; }
 
-  /* ── Инпуты ── */
   .field { margin-bottom: 14px; }
-  .field label {
-    display: block; font-size: 12px;
-    font-weight: 600; color: var(--muted);
-    margin-bottom: 6px;
-  }
+  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
   .field input, .field textarea {
-    width: 100%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 11px 14px;
-    color: var(--text);
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px;
-    outline: none;
-    transition: border-color .2s;
-    resize: none;
+    width: 100%; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 14px; color: var(--text);
+    font-family: 'Manrope', sans-serif; font-size: 14px; outline: none; resize: none; transition: border-color .2s;
   }
-  .field input:focus, .field textarea:focus {
-    border-color: var(--accent);
-  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
 
-  /* ── Тарифная сетка ── */
   .tariff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-  .tariff-block {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px;
-  }
-  .tariff-block .type {
-    font-size: 11px; font-weight: 700;
-    color: var(--muted); text-transform: uppercase;
-    margin-bottom: 10px; letter-spacing: .5px;
-  }
+  .tariff-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
+  .tariff-block .type { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: .5px; }
   .tariff-block.air .type { color: #60a5fa; }
   .tariff-block.truck .type { color: #fb923c; }
-
-  .tariff-block input {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
-    color: var(--text);
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px; font-weight: 600;
-    outline: none;
-    margin-bottom: 8px;
-    transition: border-color .2s;
-  }
+  .tariff-block input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600; outline: none; margin-bottom: 8px; transition: border-color .2s; }
   .tariff-block input:focus { border-color: var(--accent); }
-  .tariff-block small {
-    display: block; font-size: 10px;
-    color: var(--muted); margin-top: -4px; margin-bottom: 8px;
-  }
+  .tariff-block small { display: block; font-size: 10px; color: var(--muted); margin-top: -4px; margin-bottom: 8px; }
 
-  /* ── Кнопки ── */
-  .btn {
-    width: 100%; padding: 13px;
-    border: none; border-radius: 10px;
-    font-family: 'Manrope', sans-serif;
-    font-size: 14px; font-weight: 700;
-    cursor: pointer;
-    transition: all .2s;
-  }
-  .btn-primary {
-    background: var(--accent);
-    color: #fff;
-    box-shadow: 0 4px 16px rgba(108,99,255,.35);
-  }
+  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; }
+  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(108,99,255,.35); }
   .btn-primary:active { transform: scale(.97); }
-
-  .btn-sm {
-    width: auto; padding: 8px 14px;
-    font-size: 13px;
-    border-radius: 8px;
-  }
+  .btn-sm { width: auto; padding: 8px 14px; font-size: 13px; border-radius: 8px; }
   .btn-danger { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-  .btn-success { background: rgba(34,197,94,.15); color: var(--green); border: 1px solid rgba(34,197,94,.3); }
   .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
 
-  /* ── Список промокодов ── */
-  .promo-item {
-    display: flex; align-items: center; justify-content: space-between;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-  }
+  .promo-item { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
   .promo-code { font-size: 14px; font-weight: 700; letter-spacing: .5px; }
-  .promo-discount {
-    font-size: 12px; font-weight: 600;
-    color: var(--green);
-    background: rgba(34,197,94,.12);
-    border-radius: 6px;
-    padding: 3px 8px;
-    margin-right: 10px;
-  }
+  .promo-discount { font-size: 12px; font-weight: 600; color: var(--green); background: rgba(34,197,94,.12); border-radius: 6px; padding: 3px 8px; margin-right: 10px; }
   .promo-right { display: flex; align-items: center; gap: 8px; }
 
-  /* ── Треки ── */
-  .track-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-  }
+  .track-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
   .track-order { font-size: 13px; color: var(--muted); margin-bottom: 3px; }
   .track-num { font-size: 14px; font-weight: 700; font-family: monospace; letter-spacing: .5px; }
 
-  /* ── FAQ ── */
-  .faq-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 10px;
-  }
-  .faq-item input, .faq-item textarea {
-    width: 100%;
-    background: var(--bg);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 9px 12px;
-    color: var(--text);
-    font-family: 'Manrope', sans-serif;
-    font-size: 13px;
-    outline: none;
-    margin-bottom: 8px;
-    resize: none;
-  }
-  .faq-item input:focus, .faq-item textarea:focus { border-color: var(--accent); }
+  .faq-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+  .faq-item input, .faq-item textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: 'Manrope', sans-serif; font-size: 13px; outline: none; margin-bottom: 8px; resize: none; }
   .faq-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
   .faq-num { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
 
-  /* ── Toast ── */
-  .toast {
-    position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 20px;
-    font-size: 14px; font-weight: 600;
-    opacity: 0; pointer-events: none;
-    transition: all .3s;
-    z-index: 999; white-space: nowrap;
-  }
+  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .3s; z-index: 999; white-space: nowrap; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.ok { border-color: var(--green); color: var(--green); }
   .toast.err { border-color: var(--red); color: var(--red); }
 
-  /* ── Loader ── */
-  .loader {
-    display: flex; align-items: center; justify-content: center;
-    height: 120px; color: var(--muted); font-size: 14px;
-  }
-  .spinner {
-    width: 20px; height: 20px;
-    border: 2px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-    margin-right: 10px;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Пустое состояние ── */
   .empty { text-align: center; padding: 30px 0; color: var(--muted); font-size: 14px; }
   .empty-icon { font-size: 32px; margin-bottom: 8px; }
-
   .row { display: flex; gap: 10px; }
   .row .field { flex: 1; margin-bottom: 0; }
-  .section-gap { margin-top: 20px; }
+  .section-gap { margin-top: 16px; }
 </style>
 </head>
 <body>
 
-<!-- Шапка -->
-<div class="header">
-  <div class="header-top">
-    <div class="logo">Bot<span>Panel</span></div>
-    <div class="status-dot" id="statusDot"></div>
-  </div>
+<!-- Экран входа -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">🤖</div>
+  <div class="login-title">Панель управления</div>
+  <div class="login-subtitle">Введите код доступа который вы получили от администратора</div>
+  <input class="login-input" id="codeInput" type="text" placeholder="Введите код доступа" maxlength="20">
+  <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти</button>
+  <div class="login-error" id="loginError"></div>
 </div>
 
-<!-- Табы -->
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('tariffs')">💰 Тарифы</button>
-  <button class="tab" onclick="switchTab('promos')">🎟 Промо</button>
-  <button class="tab" onclick="switchTab('tracks')">📦 Треки</button>
-  <button class="tab" onclick="switchTab('faq')">📚 FAQ</button>
-  <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
-</div>
+<!-- Основной интерфейс -->
+<div class="main-screen" id="mainScreen">
 
-<!-- ══════════════ ТАРИФЫ ══════════════ -->
-<div class="page active" id="page-tariffs">
-  <div class="card">
-    <div class="card-title">Стоимость доставки</div>
-    <div class="tariff-grid">
-      <div class="tariff-block air">
-        <div class="type">✈️ Авиа</div>
-        <input type="number" id="air_percent_display" placeholder="17" step="0.1">
-        <small>Комиссия %</small>
-        <input type="number" id="air_per_kg" placeholder="700" step="10">
-        <small>₽ за кг</small>
-      </div>
-      <div class="tariff-block truck">
-        <div class="type">🚛 Авто</div>
-        <input type="number" id="truck_percent_display" placeholder="11" step="0.1">
-        <small>Комиссия %</small>
-        <input type="number" id="truck_per_kg" placeholder="350" step="10">
-        <small>₽ за кг</small>
-      </div>
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Bot<span>Panel</span></div>
+      <div class="status-dot"></div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">Предпросмотр расчёта</div>
-    <div class="field">
-      <label>Цена товара (¥)</label>
-      <input type="number" id="preview_price" placeholder="500" oninput="updatePreview()">
-    </div>
-    <div class="field">
-      <label>Вес (кг)</label>
-      <input type="number" id="preview_weight" placeholder="1.5" step="0.1" oninput="updatePreview()">
-    </div>
-    <div id="preview_result" style="font-size:13px; color:var(--muted); line-height:1.8;"></div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('tariffs')">💰 Тарифы</button>
+    <button class="tab" onclick="switchTab('promos')">🎟 Промо</button>
+    <button class="tab" onclick="switchTab('tracks')">📦 Треки</button>
+    <button class="tab" onclick="switchTab('faq')">📚 FAQ</button>
+    <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
   </div>
 
-  <button class="btn btn-primary" onclick="saveTariffs()">Сохранить тарифы</button>
-</div>
-
-<!-- ══════════════ ПРОМОКОДЫ ══════════════ -->
-<div class="page" id="page-promos">
-  <div class="card">
-    <div class="card-title">Добавить промокод</div>
-    <div class="row">
-      <div class="field">
-        <label>Код</label>
-        <input type="text" id="new_promo_code" placeholder="SALE20" style="text-transform:uppercase">
-      </div>
-      <div class="field">
-        <label>Скидка %</label>
-        <input type="number" id="new_promo_discount" placeholder="20" min="1" max="99">
+  <!-- ТАРИФЫ -->
+  <div class="page active" id="page-tariffs">
+    <div class="card">
+      <div class="card-title">Стоимость доставки</div>
+      <div class="tariff-grid">
+        <div class="tariff-block air">
+          <div class="type">✈️ Авиа</div>
+          <input type="number" id="air_percent_display" placeholder="17" step="0.1">
+          <small>Комиссия %</small>
+          <input type="number" id="air_per_kg" placeholder="700" step="10">
+          <small>₽ за кг</small>
+        </div>
+        <div class="tariff-block truck">
+          <div class="type">🚛 Авто</div>
+          <input type="number" id="truck_percent_display" placeholder="11" step="0.1">
+          <small>Комиссия %</small>
+          <input type="number" id="truck_per_kg" placeholder="350" step="10">
+          <small>₽ за кг</small>
+        </div>
       </div>
     </div>
-    <div class="section-gap"></div>
-    <button class="btn btn-primary" onclick="addPromo()">Добавить промокод</button>
+    <div class="card">
+      <div class="card-title">Предпросмотр</div>
+      <div class="field"><label>Цена товара (¥)</label><input type="number" id="preview_price" placeholder="500" oninput="updatePreview()"></div>
+      <div class="field"><label>Вес (кг)</label><input type="number" id="preview_weight" placeholder="1.5" step="0.1" oninput="updatePreview()"></div>
+      <div id="preview_result" style="font-size:13px;color:var(--muted);line-height:1.8;"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveTariffs()">Сохранить тарифы</button>
   </div>
 
-  <div class="card">
-    <div class="card-title">Активные промокоды</div>
-    <div id="promos-list"><div class="loader"><div class="spinner"></div> Загрузка...</div></div>
+  <!-- ПРОМОКОДЫ -->
+  <div class="page" id="page-promos">
+    <div class="card">
+      <div class="card-title">Добавить промокод</div>
+      <div class="row">
+        <div class="field"><label>Код</label><input type="text" id="new_promo_code" placeholder="SALE20" style="text-transform:uppercase"></div>
+        <div class="field"><label>Скидка %</label><input type="number" id="new_promo_discount" placeholder="20" min="1" max="99"></div>
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="addPromo()">Добавить</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Активные промокоды</div>
+      <div id="promos-list"></div>
+    </div>
   </div>
+
+  <!-- ТРЕКИ -->
+  <div class="page" id="page-tracks">
+    <div class="card">
+      <div class="card-title">Добавить трек-номер</div>
+      <div class="field"><label>Номер заказа</label><input type="text" id="new_order_id" placeholder="ORD-001"></div>
+      <div class="field"><label>Трек-номер</label><input type="text" id="new_track_num" placeholder="RU123456789CN"></div>
+      <button class="btn btn-primary" onclick="addTrack()">Добавить</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Все заказы</div>
+      <div id="tracks-list"></div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="page" id="page-faq">
+    <div class="card">
+      <div class="card-title">Вопросы и ответы</div>
+      <div id="faq-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:4px">+ Добавить вопрос</button>
+    </div>
+    <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
+  </div>
+
+  <!-- ОБЩЕЕ -->
+  <div class="page" id="page-general">
+    <div class="card">
+      <div class="card-title">Контакты</div>
+      <div class="field"><label>Менеджер</label><input type="text" id="manager_link" placeholder="@manager"></div>
+      <div class="field"><label>Канал</label><input type="text" id="channel_link" placeholder="@channel"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Приветствие</div>
+      <div class="field"><textarea id="welcome_text" rows="4" placeholder="Добро пожаловать!"></textarea></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveGeneral()">Сохранить</button>
+  </div>
+
 </div>
 
-<!-- ══════════════ ТРЕКИ ══════════════ -->
-<div class="page" id="page-tracks">
-  <div class="card">
-    <div class="card-title">Добавить трек-номер</div>
-    <div class="field">
-      <label>Номер заказа</label>
-      <input type="text" id="new_order_id" placeholder="ORD-001">
-    </div>
-    <div class="field">
-      <label>Трек-номер</label>
-      <input type="text" id="new_track_num" placeholder="RU123456789CN">
-    </div>
-    <button class="btn btn-primary" onclick="addTrack()">Добавить</button>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Все заказы</div>
-    <div id="tracks-list"><div class="loader"><div class="spinner"></div> Загрузка...</div></div>
-  </div>
-</div>
-
-<!-- ══════════════ FAQ ══════════════ -->
-<div class="page" id="page-faq">
-  <div class="card">
-    <div class="card-title">Вопросы и ответы</div>
-    <div id="faq-list"></div>
-    <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%; margin-top:4px;">
-      + Добавить вопрос
-    </button>
-  </div>
-  <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
-</div>
-
-<!-- ══════════════ ОБЩЕЕ ══════════════ -->
-<div class="page" id="page-general">
-  <div class="card">
-    <div class="card-title">Контакты</div>
-    <div class="field">
-      <label>Менеджер (username)</label>
-      <input type="text" id="manager_link" placeholder="@manager">
-    </div>
-    <div class="field">
-      <label>Канал (username)</label>
-      <input type="text" id="channel_link" placeholder="@mychannel">
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">Приветствие</div>
-    <div class="field">
-      <label>Текст при /start</label>
-      <textarea id="welcome_text" rows="4" placeholder="Добро пожаловать! Здесь вы можете..."></textarea>
-    </div>
-  </div>
-
-  <button class="btn btn-primary" onclick="saveGeneral()">Сохранить</button>
-</div>
-
-<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Инициализация Telegram Web App ──
 const tg = window.Telegram.WebApp;
 tg.expand();
-tg.setHeaderColor('#0f0f13');
 
-// Получаем client_id из URL параметра
-const urlParams = new URLSearchParams(window.location.search);
-const CLIENT_ID = urlParams.get('client_id');
-const INIT_DATA = tg.initData;
-const API = ''; // пустой = относительный путь, тот же сервер
+const INIT_DATA = tg.initData || 'dev';
+const API = '';
 
-// ── Состояние ──
+let CLIENT_ID = null;
 let settings = {};
 let promos = [];
 let tracks = [];
 let faqItems = [];
 
+// ── Вход ──
+document.getElementById('codeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+async function doLogin() {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  if (!code) return;
+
+  const btn = document.getElementById('loginBtn');
+  const err = document.getElementById('loginError');
+  btn.disabled = true;
+  btn.textContent = 'Проверяем...';
+  err.textContent = '';
+
+  try {
+    const r = await fetch(`${API}/api/auth`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA },
+      body: JSON.stringify({ code, username: tg.initDataUnsafe?.user?.username || '' })
+    });
+    const data = await r.json();
+
+    if (!r.ok || !data.client_id) {
+      err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
+      btn.disabled = false;
+      btn.textContent = 'Войти';
+      tg.HapticFeedback.notificationOccurred('error');
+      return;
+    }
+
+    CLIENT_ID = data.client_id;
+    await loadAll();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    tg.HapticFeedback.notificationOccurred('success');
+
+  } catch(e) {
+    err.textContent = '❌ Ошибка соединения';
+    btn.disabled = false;
+    btn.textContent = 'Войти';
+  }
+}
+
 // ── Табы ──
 function switchTab(name) {
-  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const pages = ['tariffs','promos','tracks','faq','general'];
-  const idx = pages.indexOf(name);
-  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', pages[i] === name);
+  });
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
 }
 
@@ -452,242 +393,152 @@ function showToast(msg, type='ok') {
 
 // ── API ──
 async function apiGet(path) {
-  const r = await fetch(`${API}/api/${path}`, {
-    headers: { 'x-init-data': INIT_DATA || 'dev' }
-  });
+  const r = await fetch(`${API}/api/${path}`, { headers: { 'x-init-data': INIT_DATA } });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
-
 async function apiPost(path, body) {
-  const r = await fetch(`${API}/api/${path}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA || 'dev' },
-    body: JSON.stringify(body)
-  });
+  const r = await fetch(`${API}/api/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
-
 async function apiDelete(path, body) {
-  const r = await fetch(`${API}/api/${path}`, {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA || 'dev' },
-    body: JSON.stringify(body)
-  });
+  const r = await fetch(`${API}/api/${path}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA }, body: JSON.stringify(body) });
   if (!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
-// ── Загрузка данных ──
+// ── Загрузка ──
 async function loadAll() {
-  try {
-    const [s, p, tr] = await Promise.all([
-      apiGet(`settings/${CLIENT_ID}`),
-      apiGet(`promos/${CLIENT_ID}`),
-      apiGet(`tracks/${CLIENT_ID}`)
-    ]);
-    settings = s;
-    promos = p.promos;
-    tracks = tr.tracks;
-
-    fillSettings();
-    renderPromos();
-    renderTracks();
-    renderFaq();
-
-    document.getElementById('statusDot').style.background = 'var(--green)';
-  } catch(e) {
-    document.getElementById('statusDot').style.background = 'var(--red)';
-    showToast('Ошибка загрузки', 'err');
-  }
+  const [s, p, tr] = await Promise.all([
+    apiGet(`settings/${CLIENT_ID}`),
+    apiGet(`promos/${CLIENT_ID}`),
+    apiGet(`tracks/${CLIENT_ID}`)
+  ]);
+  settings = s; promos = p.promos; tracks = tr.tracks;
+  fillSettings(); renderPromos(); renderTracks();
+  try { faqItems = JSON.parse(settings.faq_json || '[]'); } catch { faqItems = []; }
+  renderFaqItems();
 }
 
-// ── Заполнение полей настроек ──
 function fillSettings() {
   document.getElementById('air_percent_display').value = (settings.air_percent * 100).toFixed(1);
-  document.getElementById('air_per_kg').value          = settings.air_per_kg;
+  document.getElementById('air_per_kg').value = settings.air_per_kg;
   document.getElementById('truck_percent_display').value = (settings.truck_percent * 100).toFixed(1);
-  document.getElementById('truck_per_kg').value        = settings.truck_per_kg;
-  document.getElementById('manager_link').value        = settings.manager_link || '';
-  document.getElementById('channel_link').value        = settings.channel_link || '';
-  document.getElementById('welcome_text').value        = settings.welcome_text || '';
-
-  faqItems = settings.faq || [];
-  renderFaqItems();
-  updatePreview();
+  document.getElementById('truck_per_kg').value = settings.truck_per_kg;
+  document.getElementById('manager_link').value = settings.manager_link || '';
+  document.getElementById('channel_link').value = settings.channel_link || '';
+  document.getElementById('welcome_text').value = settings.welcome_text || '';
 }
 
-// ── Предпросмотр расчёта ──
 function updatePreview() {
-  const price  = parseFloat(document.getElementById('preview_price').value) || 0;
+  const price = parseFloat(document.getElementById('preview_price').value) || 0;
   const weight = parseFloat(document.getElementById('preview_weight').value) || 0;
-  const rate   = 13; // примерный курс для предпросмотра
-
-  const ap = parseFloat(document.getElementById('air_percent_display').value) / 100 || settings.air_percent || 0.17;
-  const ak = parseFloat(document.getElementById('air_per_kg').value) || settings.air_per_kg || 700;
-  const tp = parseFloat(document.getElementById('truck_percent_display').value) / 100 || settings.truck_percent || 0.11;
-  const tk = parseFloat(document.getElementById('truck_per_kg').value) || settings.truck_per_kg || 350;
-
-  if (!price && !weight) {
-    document.getElementById('preview_result').innerHTML = '<span style="color:var(--muted)">Введите цену и вес выше</span>';
-    return;
-  }
-
+  const rate = 13;
+  const ap = parseFloat(document.getElementById('air_percent_display').value) / 100 || 0.17;
+  const ak = parseFloat(document.getElementById('air_per_kg').value) || 700;
+  const tp = parseFloat(document.getElementById('truck_percent_display').value) / 100 || 0.11;
+  const tk = parseFloat(document.getElementById('truck_per_kg').value) || 350;
+  if (!price && !weight) { document.getElementById('preview_result').innerHTML = ''; return; }
   const priceRub = price * rate;
-  const airSvc   = priceRub * ap + weight * ak;
-  const truckSvc = priceRub * tp + weight * tk;
-
   document.getElementById('preview_result').innerHTML =
-    `<b style="color:var(--muted);font-size:11px">КУРС ~${rate} ₽ (предпросмотр)</b><br><br>` +
-    `🚛 Авто: <b>${Math.round(priceRub + truckSvc).toLocaleString()} ₽</b> (услуги: ${Math.round(truckSvc).toLocaleString()} ₽)<br>` +
-    `✈️ Авиа: <b>${Math.round(priceRub + airSvc).toLocaleString()} ₽</b> (услуги: ${Math.round(airSvc).toLocaleString()} ₽)`;
+    `🚛 Авто: <b>${Math.round(priceRub + priceRub*tp + weight*tk).toLocaleString()} ₽</b><br>` +
+    `✈️ Авиа: <b>${Math.round(priceRub + priceRub*ap + weight*ak).toLocaleString()} ₽</b>`;
 }
 
-// ── Сохранить тарифы ──
 async function saveTariffs() {
   try {
     await apiPost(`settings/${CLIENT_ID}`, {
-      air_percent:   parseFloat(document.getElementById('air_percent_display').value) / 100,
-      air_per_kg:    parseFloat(document.getElementById('air_per_kg').value),
+      air_percent: parseFloat(document.getElementById('air_percent_display').value) / 100,
+      air_per_kg: parseFloat(document.getElementById('air_per_kg').value),
       truck_percent: parseFloat(document.getElementById('truck_percent_display').value) / 100,
-      truck_per_kg:  parseFloat(document.getElementById('truck_per_kg').value),
+      truck_per_kg: parseFloat(document.getElementById('truck_per_kg').value),
     });
     showToast('Тарифы сохранены!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('Ошибка сохранения', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
 
-// ── Промокоды ──
 function renderPromos() {
   const el = document.getElementById('promos-list');
-  if (!promos.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>';
-    return;
-  }
+  if (!promos.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>'; return; }
   el.innerHTML = promos.map(p => `
     <div class="promo-item">
       <span class="promo-code">${p.code}</span>
-      <div class="promo-right">
-        <span class="promo-discount">-${p.discount}%</span>
-        <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button>
-      </div>
-    </div>
-  `).join('');
+      <div class="promo-right"><span class="promo-discount">-${p.discount}%</span>
+      <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div>
+    </div>`).join('');
 }
 
 async function addPromo() {
-  const code     = document.getElementById('new_promo_code').value.trim().toUpperCase();
+  const code = document.getElementById('new_promo_code').value.trim().toUpperCase();
   const discount = parseInt(document.getElementById('new_promo_discount').value);
   if (!code || !discount) return showToast('Заполни код и скидку', 'err');
-
   try {
     await apiPost(`promos/${CLIENT_ID}`, { code, discount });
-    promos.push({ code, discount });
-    renderPromos();
-    document.getElementById('new_promo_code').value    = '';
+    promos.push({ code, discount }); renderPromos();
+    document.getElementById('new_promo_code').value = '';
     document.getElementById('new_promo_discount').value = '';
     showToast('Промокод добавлен!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('Ошибка', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
 
 async function deletePromo(code) {
   try {
     await apiDelete(`promos/${CLIENT_ID}`, { code });
-    promos = promos.filter(p => p.code !== code);
-    renderPromos();
+    promos = promos.filter(p => p.code !== code); renderPromos();
     showToast('Промокод удалён');
-  } catch(e) {
-    showToast('Ошибка', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
 
-// ── Треки ──
 function renderTracks() {
   const el = document.getElementById('tracks-list');
-  if (!tracks.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';
-    return;
-  }
+  if (!tracks.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>'; return; }
   el.innerHTML = tracks.map(t => `
     <div class="track-item">
       <div class="track-order">Заказ: ${t.order_id}</div>
       <div class="track-num">${t.track_num}</div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
 async function addTrack() {
-  const order_id  = document.getElementById('new_order_id').value.trim();
+  const order_id = document.getElementById('new_order_id').value.trim();
   const track_num = document.getElementById('new_track_num').value.trim();
   if (!order_id || !track_num) return showToast('Заполни все поля', 'err');
-
   try {
     await apiPost(`tracks/${CLIENT_ID}`, { order_id, track_num });
-    tracks.push({ order_id, track_num });
-    renderTracks();
-    document.getElementById('new_order_id').value  = '';
+    tracks.push({ order_id, track_num }); renderTracks();
+    document.getElementById('new_order_id').value = '';
     document.getElementById('new_track_num').value = '';
     showToast('Трек добавлен!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('Ошибка', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
-
-// ── FAQ ──
-function renderFaq() { renderFaqItems(); }
 
 function renderFaqItems() {
   const el = document.getElementById('faq-list');
-  if (!faqItems.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Вопросов нет<br><small>Нажми кнопку ниже чтобы добавить</small></div>';
-    return;
-  }
+  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>'; return; }
   el.innerHTML = faqItems.map((item, i) => `
     <div class="faq-item">
-      <div class="faq-item-header">
-        <span class="faq-num">Вопрос ${i+1}</span>
-        <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button>
-      </div>
-      <input type="text" placeholder="Вопрос..." value="${escHtml(item.question)}"
-             oninput="faqItems[${i}].question=this.value">
-      <textarea placeholder="Ответ..." rows="3"
-                oninput="faqItems[${i}].answer=this.value">${escHtml(item.answer)}</textarea>
-    </div>
-  `).join('');
+      <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div>
+      <input type="text" placeholder="Вопрос..." value="${esc(item.question)}" oninput="faqItems[${i}].question=this.value">
+      <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
+    </div>`).join('');
 }
 
-function addFaqItem() {
-  faqItems.push({ question: '', answer: '' });
-  renderFaqItems();
-  // Скролл вниз к новому вопросу
-  setTimeout(() => {
-    document.getElementById('page-faq').scrollTo({ top: 9999, behavior: 'smooth' });
-  }, 50);
-}
-
-function removeFaqItem(i) {
-  faqItems.splice(i, 1);
-  renderFaqItems();
-}
+function addFaqItem() { faqItems.push({ question: '', answer: '' }); renderFaqItems(); }
+function removeFaqItem(i) { faqItems.splice(i, 1); renderFaqItems(); }
 
 async function saveFaq() {
   try {
     await apiPost(`faq/${CLIENT_ID}`, faqItems);
     showToast('FAQ сохранён!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('Ошибка сохранения', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
 
-// ── Общие настройки ──
 async function saveGeneral() {
   try {
     await apiPost(`settings/${CLIENT_ID}`, {
@@ -697,21 +548,11 @@ async function saveGeneral() {
     });
     showToast('Настройки сохранены!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
-    showToast('Ошибка сохранения', 'err');
-  }
+  } catch { showToast('Ошибка', 'err'); }
 }
 
-// ── Утилиты ──
-function escHtml(str) {
-  return (str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-// ── Старт ──
-if (CLIENT_ID) {
-  loadAll();
-} else {
-  document.body.innerHTML = '<div style="padding:40px;text-align:center;color:#ef4444">❌ Нет client_id в URL</div>';
+function esc(str) {
+  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
 </body>
