@@ -70,8 +70,7 @@ def client_menu_kb():
     kb.button(text="🤩 Оформить заказ")
     kb.button(text="📚 FAQ")
     kb.button(text="❓ Вопросы")
-    kb.button(text="⚙️ Настройки бота")
-    kb.adjust(2, 2, 2)
+    kb.adjust(2, 2, 1)
     return kb.as_markup(resize_keyboard=True)
 
 
@@ -109,23 +108,22 @@ def make_dispatcher():
         await state.update_data(client_id=client["id"])
         await state.set_state(None)
         settings = await get_settings(client["id"])
+        # Обновляем кнопку меню с client_id для этого пользователя
+        from aiogram.types import MenuButtonWebApp, WebAppInfo as WAI
+        await message.bot.set_chat_menu_button(
+            chat_id=message.chat.id,
+            menu_button=MenuButtonWebApp(
+                text="⚙️ Настройки",
+                web_app=WAI(url=f"{MINI_APP_URL}?client_id={client['id']}")
+            )
+        )
         await message.answer(
             f"✅ <b>Доступ открыт!</b>\n\n{settings.get('welcome_text', 'Добро пожаловать!')}",
             parse_mode="HTML",
             reply_markup=client_menu_kb()
         )
-        await message.answer("⚙️ Панель управления ботом:", reply_markup=miniapp_kb(client["id"]))
 
-    @dp.message(F.text == "⚙️ Настройки бота")
-    async def open_settings(message: Message, state: FSMContext):
-        data = await state.get_data()
-        client_id = data.get("client_id")
-        if not client_id:
-            await message.answer("Сначала введите код (/start)")
-            return
-        await message.answer("⚙️ Панель управления:", reply_markup=miniapp_kb(client_id))
-
-    @dp.message(F.text == "💸 Калькулятор")
+@dp.message(F.text == "💸 Калькулятор")
     async def calc_start(message: Message, state: FSMContext):
         data = await state.get_data()
         if not data.get("client_id"):
