@@ -220,3 +220,17 @@ async def get_all_tracks(client_id) -> list:
 
 if __name__ == "__main__":
     asyncio.run(init_db())
+
+
+async def update_bot_token(client_id: int, token: str) -> bool:
+    conn = await get_conn()
+    await conn.execute("UPDATE clients SET bot_token=$1 WHERE id=$2", token, client_id)
+    await conn.close()
+    return True
+
+
+async def get_client_by_id(client_id: int):
+    conn = await get_conn()
+    row = await conn.fetchrow("SELECT * FROM clients WHERE id=$1", client_id)
+    await conn.close()
+    return dict(row) if row else None

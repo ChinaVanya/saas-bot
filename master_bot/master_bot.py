@@ -24,9 +24,8 @@ dp = Dispatcher(storage=MemoryStorage())
 
 class RegisterStates(StatesGroup):
     username    = State()
-    bot_token   = State()
-    bot_name    = State()
     access_code = State()
+    bot_name    = State()
 
 
 def is_master(user_id):
@@ -84,7 +83,7 @@ async def cb_add_client(callback, state: FSMContext):
         return
     await state.set_state(RegisterStates.username)
     await callback.message.answer(
-        "➕ <b>Регистрация клиента</b>\n\n<b>Шаг 1/4.</b> Введи @username клиента:",
+        "➕ <b>Регистрация клиента</b>\n\n<b>Шаг 1/3.</b> Введи @username клиента:",
         parse_mode="HTML"
     )
     await callback.answer()
@@ -97,23 +96,8 @@ async def reg_username(message: Message, state: FSMContext):
         await message.answer("❌ Некорректный username. Введи ещё раз:")
         return
     await state.update_data(username=username)
-    await state.set_state(RegisterStates.bot_token)
-    await message.answer(
-        "<b>Шаг 2/4.</b> Введи токен бота клиента\n\n"
-        "Получи у @BotFather → /newbot",
-        parse_mode="HTML"
-    )
-
-
-@dp.message(RegisterStates.bot_token)
-async def reg_bot_token(message: Message, state: FSMContext):
-    token = message.text.strip()
-    if ":" not in token or len(token) < 30:
-        await message.answer("❌ Похоже это не токен. Попробуй снова:")
-        return
-    await state.update_data(bot_token=token)
     await state.set_state(RegisterStates.bot_name)
-    await message.answer("<b>Шаг 3/4.</b> Введи название магазина:", parse_mode="HTML")
+    await message.answer("<b>Шаг 2/3.</b> Введи название магазина клиента:", parse_mode="HTML")
 
 
 @dp.message(RegisterStates.bot_name)
@@ -121,7 +105,7 @@ async def reg_bot_name(message: Message, state: FSMContext):
     await state.update_data(bot_name=message.text.strip())
     await state.set_state(RegisterStates.access_code)
     await message.answer(
-        "<b>Шаг 4/4.</b> Придумай код доступа\n"
+        "<b>Шаг 3/3.</b> Придумай код доступа\n"
         "Например: <code>SHOP2024</code>",
         parse_mode="HTML"
     )
@@ -131,10 +115,11 @@ async def reg_bot_name(message: Message, state: FSMContext):
 async def reg_access_code(message: Message, state: FSMContext):
     code = message.text.strip().upper()
     data = await state.get_data()
+    # Токен пустой — клиент введёт его сам в Mini App
     success = await add_client(
         username=data["username"],
         access_code=code,
-        bot_token=data["bot_token"],
+        bot_token=f"pending_{data['username']}",  # временный placeholder
         bot_name=data["bot_name"]
     )
     await state.clear()
@@ -142,14 +127,15 @@ async def reg_access_code(message: Message, state: FSMContext):
         await message.answer(
             f"✅ <b>Клиент зарегистрирован!</b>\n\n"
             f"👤 Username: @{data['username']}\n"
-            f"🤖 Бот: {data['bot_name']}\n"
+            f"🏪 Магазин: {data['bot_name']}\n"
             f"🔑 Код доступа: <code>{code}</code>\n\n"
-            f"📲 Клиент пишет боту /start и вводит код.",
+            f"📲 Клиент открывает @pandatest15_bot → вводит код → "
+            f"вводит токен своего бота → настраивает всё в Mini App.",
             parse_mode="HTML",
             reply_markup=master_menu_kb()
         )
     else:
-        await message.answer("❌ Ошибка! Username или код уже существует.", reply_markup=master_menu_kb())
+        await message.answer("❌ Ошибка! Username уже существует.", reply_markup=master_menu_kb())
 
 
 @dp.callback_query(F.data == "deactivate_client")
@@ -174,10 +160,7 @@ async def cb_restore(callback, state: FSMContext):
 async def cb_delete(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
-    await callback.message.answer(
-        "🗑 Введи username клиента для УДАЛЕНИЯ\n\n"
-        "⚠️ Все данные удалятся безвозвратно!"
-    )
+    await callback.message.answer("🗑 Введи username клиента для УДАЛЕНИЯ\n\n⚠️ Все данные удалятся безвозвратно!")
     await state.set_state("delete_waiting")
     await callback.answer()
 
@@ -195,26 +178,17 @@ async def text_input_handler(message: Message, state: FSMContext):
     if current == "deactivate_waiting":
         success = await deactivate_client(username)
         await state.clear()
-        if success:
-            await message.answer(f"✅ @{username} отключён.", reply_markup=master_menu_kb())
-        else:
-            await message.answer(f"❌ @{username} не найден.", reply_markup=master_menu_kb())
+        await message.answer(f"✅ @{username} отключён." if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
 
     elif current == "restore_waiting":
         success = await restore_client(username)
         await state.clear()
-        if success:
-            await message.answer(f"✅ @{username} восстановлен!", reply_markup=master_menu_kb())
-        else:
-            await message.answer(f"❌ @{username} не найден.", reply_markup=master_menu_kb())
+        await message.answer(f"✅ @{username} восстановлен!" if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
 
     elif current == "delete_waiting":
         success = await delete_client(username)
         await state.clear()
-        if success:
-            await message.answer(f"🗑 @{username} удалён.", reply_markup=master_menu_kb())
-        else:
-            await message.answer(f"❌ @{username} не найден.", reply_markup=master_menu_kb())
+        await message.answer(f"🗑 @{username} удалён." if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
 
 
 async def main():

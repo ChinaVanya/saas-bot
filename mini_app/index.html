@@ -7,243 +7,186 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-
   :root {
-    --bg:       #0f0f13;
-    --surface:  #1a1a24;
-    --surface2: #22222f;
-    --border:   #2e2e3e;
-    --accent:   #6c63ff;
-    --accent2:  #a78bfa;
-    --green:    #22c55e;
-    --red:      #ef4444;
-    --text:     #f0f0f5;
-    --muted:    #7070a0;
-    --radius:   14px;
+    --bg:#0f0f13; --surface:#1a1a24; --surface2:#22222f; --border:#2e2e3e;
+    --accent:#6c63ff; --accent2:#a78bfa; --green:#22c55e; --red:#ef4444;
+    --text:#f0f0f5; --muted:#7070a0; --radius:14px;
   }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Manrope',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  /* LOGIN */
+  .login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:30px 24px; }
+  .login-logo { font-size:48px; margin-bottom:20px; }
+  .login-title { font-size:24px; font-weight:800; margin-bottom:8px; text-align:center; }
+  .login-subtitle { font-size:14px; color:var(--muted); margin-bottom:32px; text-align:center; line-height:1.5; }
+  .login-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; color:var(--text); font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; letter-spacing:1px; text-align:center; outline:none; margin-bottom:12px; text-transform:uppercase; transition:border-color .2s; }
+  .login-input.token-input { text-transform:none; font-size:13px; letter-spacing:0; font-weight:500; }
+  .login-input:focus { border-color:var(--accent); }
+  .login-input::placeholder { letter-spacing:0; font-weight:400; font-size:13px; color:var(--muted); text-transform:none; }
+  .login-btn { width:100%; padding:16px; background:var(--accent); border:none; border-radius:var(--radius); color:#fff; font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; cursor:pointer; box-shadow:0 4px 20px rgba(108,99,255,.4); transition:all .2s; margin-top:4px; }
+  .login-btn:active { transform:scale(.97); }
+  .login-btn:disabled { opacity:.5; cursor:not-allowed; }
+  .login-error { margin-top:12px; color:var(--red); font-size:13px; font-weight:600; text-align:center; min-height:20px; }
+  .login-hint { font-size:12px; color:var(--muted); text-align:left; width:100%; margin-bottom:6px; padding-left:4px; }
 
-  body {
-    font-family: 'Manrope', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
+  /* MAIN */
+  .main-screen { display:none; padding-bottom:80px; }
+  .header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 20px 12px; position:sticky; top:0; z-index:100; }
+  .header-top { display:flex; align-items:center; justify-content:space-between; }
+  .logo { font-size:18px; font-weight:800; }
+  .logo span { color:var(--accent2); }
+  .bot-status { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
+  .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
+  .status-dot.inactive { background:var(--red); box-shadow:0 0 8px var(--red); }
 
-  /* ── Экран входа ── */
-  .login-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 30px 24px;
-  }
+  .tabs { display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:16px 20px 0; overflow-x:auto; }
+  .tab { flex:1; min-width:fit-content; padding:8px 6px; border:none; border-radius:9px; background:transparent; color:var(--muted); font-family:'Manrope',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
+  .tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 12px rgba(108,99,255,.4); }
 
-  .login-logo {
-    font-size: 48px;
-    margin-bottom: 20px;
-  }
+  .page { display:none; padding:20px; }
+  .page.active { display:block; }
 
-  .login-title {
-    font-size: 24px;
-    font-weight: 800;
-    margin-bottom: 8px;
-    text-align: center;
-  }
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
+  .card-title { font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:14px; }
 
-  .login-subtitle {
-    font-size: 14px;
-    color: var(--muted);
-    margin-bottom: 32px;
-    text-align: center;
-  }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
+  .field input, .field textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; outline:none; resize:none; transition:border-color .2s; }
+  .field input:focus, .field textarea:focus { border-color:var(--accent); }
 
-  .login-input {
-    width: 100%;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px 18px;
-    color: var(--text);
-    font-family: 'Manrope', sans-serif;
-    font-size: 18px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-align: center;
-    outline: none;
-    margin-bottom: 14px;
-    text-transform: uppercase;
-    transition: border-color .2s;
-  }
+  .tariff-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tariff-block { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; }
+  .tariff-block .type { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:10px; letter-spacing:.5px; }
+  .tariff-block.air .type { color:#60a5fa; }
+  .tariff-block.truck .type { color:#fb923c; }
+  .tariff-block input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; font-weight:600; outline:none; margin-bottom:8px; transition:border-color .2s; }
+  .tariff-block input:focus { border-color:var(--accent); }
+  .tariff-block small { display:block; font-size:10px; color:var(--muted); margin-top:-4px; margin-bottom:8px; }
 
-  .login-input:focus { border-color: var(--accent); }
-  .login-input::placeholder { letter-spacing: 0; font-weight: 400; font-size: 14px; color: var(--muted); }
+  .btn { width:100%; padding:13px; border:none; border-radius:10px; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
+  .btn-primary { background:var(--accent); color:#fff; box-shadow:0 4px 16px rgba(108,99,255,.35); }
+  .btn-primary:active { transform:scale(.97); }
+  .btn-apply { background:linear-gradient(135deg,#22c55e,#16a34a); color:#fff; box-shadow:0 4px 16px rgba(34,197,94,.35); margin-top:10px; }
+  .btn-apply:active { transform:scale(.97); }
+  .btn-sm { width:auto; padding:8px 14px; font-size:13px; border-radius:8px; }
+  .btn-danger { background:rgba(239,68,68,.15); color:var(--red); border:1px solid rgba(239,68,68,.3); }
+  .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
 
-  .login-btn {
-    width: 100%;
-    padding: 16px;
-    background: var(--accent);
-    border: none;
-    border-radius: var(--radius);
-    color: #fff;
-    font-family: 'Manrope', sans-serif;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-    box-shadow: 0 4px 20px rgba(108,99,255,.4);
-    transition: all .2s;
-  }
+  .apply-banner { background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.05)); border:1px solid rgba(34,197,94,.3); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:var(--green); display:flex; align-items:center; gap:8px; }
 
-  .login-btn:active { transform: scale(.97); }
-  .login-btn:disabled { opacity: .5; cursor: not-allowed; }
+  .promo-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .promo-code { font-size:14px; font-weight:700; letter-spacing:.5px; }
+  .promo-discount { font-size:12px; font-weight:600; color:var(--green); background:rgba(34,197,94,.12); border-radius:6px; padding:3px 8px; margin-right:10px; }
+  .promo-right { display:flex; align-items:center; gap:8px; }
 
-  .login-error {
-    margin-top: 14px;
-    color: var(--red);
-    font-size: 13px;
-    font-weight: 600;
-    text-align: center;
-    min-height: 20px;
-  }
+  .track-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
+  .track-order { font-size:13px; color:var(--muted); margin-bottom:3px; }
+  .track-num { font-size:14px; font-weight:700; font-family:monospace; }
 
-  /* ── Основной интерфейс ── */
-  .main-screen { display: none; padding-bottom: 80px; }
+  .faq-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
+  .faq-item input, .faq-item textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Manrope',sans-serif; font-size:13px; outline:none; margin-bottom:8px; resize:none; }
+  .faq-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .faq-num { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; }
 
-  .header {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 16px 20px 12px;
-    position: sticky; top: 0; z-index: 100;
-  }
-  .header-top { display: flex; align-items: center; justify-content: space-between; }
-  .logo { font-size: 18px; font-weight: 800; }
-  .logo span { color: var(--accent2); }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .bot-info-card { background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(108,99,255,.05)); border:1px solid rgba(108,99,255,.3); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
+  .bot-info-title { font-size:16px; font-weight:800; margin-bottom:4px; }
+  .bot-info-sub { font-size:13px; color:var(--muted); margin-bottom:14px; }
+  .bot-token-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:12px; outline:none; margin-bottom:10px; transition:border-color .2s; }
+  .bot-token-input:focus { border-color:var(--accent); }
 
-  .tabs {
-    display: flex; gap: 4px;
-    background: var(--surface2);
-    border-radius: 12px;
-    padding: 4px;
-    margin: 16px 20px 0;
-  }
-  .tab {
-    flex: 1; padding: 8px 4px;
-    border: none; border-radius: 9px;
-    background: transparent;
-    color: var(--muted);
-    font-family: 'Manrope', sans-serif;
-    font-size: 12px; font-weight: 600;
-    cursor: pointer; transition: all .2s;
-  }
-  .tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 12px rgba(108,99,255,.4); }
+  .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 20px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:all .3s; z-index:999; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.ok { border-color:var(--green); color:var(--green); }
+  .toast.err { border-color:var(--red); color:var(--red); }
 
-  .page { display: none; padding: 20px; }
-  .page.active { display: block; }
-
-  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; margin-bottom: 14px; }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--muted); letter-spacing: .5px; text-transform: uppercase; margin-bottom: 14px; }
-
-  .field { margin-bottom: 14px; }
-  .field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-  .field input, .field textarea {
-    width: 100%; background: var(--surface2); border: 1px solid var(--border);
-    border-radius: 10px; padding: 11px 14px; color: var(--text);
-    font-family: 'Manrope', sans-serif; font-size: 14px; outline: none; resize: none; transition: border-color .2s;
-  }
-  .field input:focus, .field textarea:focus { border-color: var(--accent); }
-
-  .tariff-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .tariff-block { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; }
-  .tariff-block .type { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: .5px; }
-  .tariff-block.air .type { color: #60a5fa; }
-  .tariff-block.truck .type { color: #fb923c; }
-  .tariff-block input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; color: var(--text); font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 600; outline: none; margin-bottom: 8px; transition: border-color .2s; }
-  .tariff-block input:focus { border-color: var(--accent); }
-  .tariff-block small { display: block; font-size: 10px; color: var(--muted); margin-top: -4px; margin-bottom: 8px; }
-
-  .btn { width: 100%; padding: 13px; border: none; border-radius: 10px; font-family: 'Manrope', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer; transition: all .2s; }
-  .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(108,99,255,.35); }
-  .btn-primary:active { transform: scale(.97); }
-  .btn-sm { width: auto; padding: 8px 14px; font-size: 13px; border-radius: 8px; }
-  .btn-danger { background: rgba(239,68,68,.15); color: var(--red); border: 1px solid rgba(239,68,68,.3); }
-  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-
-  .promo-item { display: flex; align-items: center; justify-content: space-between; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-  .promo-code { font-size: 14px; font-weight: 700; letter-spacing: .5px; }
-  .promo-discount { font-size: 12px; font-weight: 600; color: var(--green); background: rgba(34,197,94,.12); border-radius: 6px; padding: 3px 8px; margin-right: 10px; }
-  .promo-right { display: flex; align-items: center; gap: 8px; }
-
-  .track-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
-  .track-order { font-size: 13px; color: var(--muted); margin-bottom: 3px; }
-  .track-num { font-size: 14px; font-weight: 700; font-family: monospace; letter-spacing: .5px; }
-
-  .faq-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
-  .faq-item input, .faq-item textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: 'Manrope', sans-serif; font-size: 13px; outline: none; margin-bottom: 8px; resize: none; }
-  .faq-item-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .faq-num { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; }
-
-  .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 20px; font-size: 14px; font-weight: 600; opacity: 0; pointer-events: none; transition: all .3s; z-index: 999; white-space: nowrap; }
-  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.ok { border-color: var(--green); color: var(--green); }
-  .toast.err { border-color: var(--red); color: var(--red); }
-
-  .empty { text-align: center; padding: 30px 0; color: var(--muted); font-size: 14px; }
-  .empty-icon { font-size: 32px; margin-bottom: 8px; }
-  .row { display: flex; gap: 10px; }
-  .row .field { flex: 1; margin-bottom: 0; }
-  .section-gap { margin-top: 16px; }
+  .empty { text-align:center; padding:30px 0; color:var(--muted); font-size:14px; }
+  .empty-icon { font-size:32px; margin-bottom:8px; }
+  .row { display:flex; gap:10px; }
+  .row .field { flex:1; margin-bottom:0; }
+  .section-gap { margin-top:16px; }
 </style>
 </head>
 <body>
 
-<!-- Экран входа -->
+<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🤖</div>
   <div class="login-title">Панель управления</div>
-  <div class="login-subtitle">Введите код доступа который вы получили от администратора</div>
-  <input class="login-input" id="codeInput" type="text" placeholder="Введите код доступа" maxlength="20">
-  <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти</button>
+  <div class="login-subtitle">Введите код доступа и токен вашего бота чтобы начать настройку</div>
+
+  <div class="login-hint">Код доступа</div>
+  <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
+
+  <div class="login-hint">Токен бота (от @BotFather)</div>
+  <input class="login-input token-input" id="tokenInput" type="text" placeholder="123456789:ABC-DEF...">
+
+  <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти в панель</button>
   <div class="login-error" id="loginError"></div>
 </div>
 
-<!-- Основной интерфейс -->
+<!-- MAIN -->
 <div class="main-screen" id="mainScreen">
-
   <div class="header">
     <div class="header-top">
       <div class="logo">Bot<span>Panel</span></div>
-      <div class="status-dot"></div>
+      <div class="bot-status">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Онлайн</span>
+      </div>
     </div>
   </div>
 
   <div class="tabs">
-    <button class="tab active" onclick="switchTab('tariffs')">💰 Тарифы</button>
+    <button class="tab active" onclick="switchTab('bot')">🤖 Бот</button>
+    <button class="tab" onclick="switchTab('tariffs')">💰 Тарифы</button>
     <button class="tab" onclick="switchTab('promos')">🎟 Промо</button>
     <button class="tab" onclick="switchTab('tracks')">📦 Треки</button>
     <button class="tab" onclick="switchTab('faq')">📚 FAQ</button>
     <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
   </div>
 
+  <!-- БОТ -->
+  <div class="page active" id="page-bot">
+    <div class="bot-info-card">
+      <div class="bot-info-title" id="botName">Мой магазин</div>
+      <div class="bot-info-sub">Токен бота привязан и активен</div>
+      <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Хотите сменить бота? Введите новый токен:</div>
+      <input class="bot-token-input" id="newTokenInput" placeholder="Новый токен от @BotFather">
+      <button class="btn btn-primary" onclick="updateToken()">Обновить токен бота</button>
+    </div>
+    <div class="apply-banner">
+      🚀 После каждого изменения нажимайте кнопку <b>"Применить к боту"</b> в соответствующей секции
+    </div>
+    <div class="card">
+      <div class="card-title">Инструкция</div>
+      <div style="font-size:13px; line-height:1.8; color:var(--muted);">
+        1. Создайте бота в <b style="color:var(--text)">@BotFather</b> → /newbot<br>
+        2. Скопируйте токен и вставьте выше<br>
+        3. Настройте тарифы, FAQ и контакты<br>
+        4. Нажмите <b style="color:var(--green)">"Применить к боту"</b> в каждой секции<br>
+        5. Ваш бот начнёт работать! 🎉
+      </div>
+    </div>
+  </div>
+
   <!-- ТАРИФЫ -->
-  <div class="page active" id="page-tariffs">
+  <div class="page" id="page-tariffs">
     <div class="card">
       <div class="card-title">Стоимость доставки</div>
       <div class="tariff-grid">
         <div class="tariff-block air">
           <div class="type">✈️ Авиа</div>
-          <input type="number" id="air_percent_display" placeholder="17" step="0.1">
+          <input type="number" id="air_percent_display" placeholder="17" step="0.1" oninput="updatePreview()">
           <small>Комиссия %</small>
-          <input type="number" id="air_per_kg" placeholder="700" step="10">
+          <input type="number" id="air_per_kg" placeholder="700" step="10" oninput="updatePreview()">
           <small>₽ за кг</small>
         </div>
         <div class="tariff-block truck">
           <div class="type">🚛 Авто</div>
-          <input type="number" id="truck_percent_display" placeholder="11" step="0.1">
+          <input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()">
           <small>Комиссия %</small>
-          <input type="number" id="truck_per_kg" placeholder="350" step="10">
+          <input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()">
           <small>₽ за кг</small>
         </div>
       </div>
@@ -255,6 +198,7 @@
       <div id="preview_result" style="font-size:13px;color:var(--muted);line-height:1.8;"></div>
     </div>
     <button class="btn btn-primary" onclick="saveTariffs()">Сохранить тарифы</button>
+    <button class="btn btn-apply" onclick="applyToBot('tariffs')">🚀 Применить к боту</button>
   </div>
 
   <!-- ПРОМОКОДЫ -->
@@ -266,12 +210,13 @@
         <div class="field"><label>Скидка %</label><input type="number" id="new_promo_discount" placeholder="20" min="1" max="99"></div>
       </div>
       <div class="section-gap"></div>
-      <button class="btn btn-primary" onclick="addPromo()">Добавить</button>
+      <button class="btn btn-primary" onclick="addPromo()">Добавить промокод</button>
     </div>
     <div class="card">
       <div class="card-title">Активные промокоды</div>
       <div id="promos-list"></div>
     </div>
+    <button class="btn btn-apply" onclick="applyToBot('promos')">🚀 Применить к боту</button>
   </div>
 
   <!-- ТРЕКИ -->
@@ -286,6 +231,7 @@
       <div class="card-title">Все заказы</div>
       <div id="tracks-list"></div>
     </div>
+    <button class="btn btn-apply" onclick="applyToBot('tracks')">🚀 Применить к боту</button>
   </div>
 
   <!-- FAQ -->
@@ -296,6 +242,7 @@
       <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:4px">+ Добавить вопрос</button>
     </div>
     <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
+    <button class="btn btn-apply" onclick="applyToBot('faq')">🚀 Применить к боту</button>
   </div>
 
   <!-- ОБЩЕЕ -->
@@ -310,8 +257,8 @@
       <div class="field"><textarea id="welcome_text" rows="4" placeholder="Добро пожаловать!"></textarea></div>
     </div>
     <button class="btn btn-primary" onclick="saveGeneral()">Сохранить</button>
+    <button class="btn btn-apply" onclick="applyToBot('general')">🚀 Применить к боту</button>
   </div>
-
 </div>
 
 <div class="toast" id="toast"></div>
@@ -319,24 +266,21 @@
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-
 const INIT_DATA = tg.initData || 'dev';
 const API = '';
-
 let CLIENT_ID = null;
 let settings = {};
 let promos = [];
 let tracks = [];
 let faqItems = [];
 
-// ── Вход ──
-document.getElementById('codeInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
+document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
+document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 async function doLogin() {
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
-  if (!code) return;
+  const token = document.getElementById('tokenInput').value.trim();
+  if (!code || !token) { document.getElementById('loginError').textContent = '❌ Заполните оба поля'; return; }
 
   const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginError');
@@ -348,121 +292,130 @@ async function doLogin() {
     const r = await fetch(`${API}/api/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA },
-      body: JSON.stringify({ code, username: tg.initDataUnsafe?.user?.username || '' })
+      body: JSON.stringify({ code, username: tg.initDataUnsafe?.user?.username || '', token })
     });
     const data = await r.json();
-
     if (!r.ok || !data.client_id) {
       err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
-      btn.disabled = false;
-      btn.textContent = 'Войти';
+      btn.disabled = false; btn.textContent = 'Войти в панель';
       tg.HapticFeedback.notificationOccurred('error');
       return;
     }
-
     CLIENT_ID = data.client_id;
+    document.getElementById('botName').textContent = data.bot_name || 'Мой магазин';
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
-
   } catch(e) {
     err.textContent = '❌ Ошибка соединения';
-    btn.disabled = false;
-    btn.textContent = 'Войти';
+    btn.disabled = false; btn.textContent = 'Войти в панель';
   }
 }
 
-// ── Табы ──
 function switchTab(name) {
-  const pages = ['tariffs','promos','tracks','faq','general'];
-  document.querySelectorAll('.tab').forEach((t,i) => {
-    t.classList.toggle('active', pages[i] === name);
-  });
+  const pages = ['bot','tariffs','promos','tracks','faq','general'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
+  document.getElementById('page-'+name).classList.add('active');
 }
 
-// ── Toast ──
 function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
-  t.textContent = (type === 'ok' ? '✅ ' : '❌ ') + msg;
+  t.textContent = (type==='ok'?'✅ ':'❌ ') + msg;
   t.className = 'toast show ' + type;
-  setTimeout(() => t.className = 'toast', 2500);
+  setTimeout(() => t.className='toast', 2500);
 }
 
-// ── API ──
 async function apiGet(path) {
-  const r = await fetch(`${API}/api/${path}`, { headers: { 'x-init-data': INIT_DATA } });
-  if (!r.ok) throw new Error(await r.text());
+  const r = await fetch(`${API}/api/${path}`, { headers:{'x-init-data':INIT_DATA} });
+  if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
 async function apiPost(path, body) {
-  const r = await fetch(`${API}/api/${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(await r.text());
+  const r = await fetch(`${API}/api/${path}`, { method:'POST', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA}, body:JSON.stringify(body) });
+  if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
 async function apiDelete(path, body) {
-  const r = await fetch(`${API}/api/${path}`, { method: 'DELETE', headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA }, body: JSON.stringify(body) });
-  if (!r.ok) throw new Error(await r.text());
+  const r = await fetch(`${API}/api/${path}`, { method:'DELETE', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA}, body:JSON.stringify(body) });
+  if(!r.ok) throw new Error(await r.text());
   return r.json();
 }
 
-// ── Загрузка ──
 async function loadAll() {
   const [s, p, tr] = await Promise.all([
     apiGet(`settings/${CLIENT_ID}`),
     apiGet(`promos/${CLIENT_ID}`),
     apiGet(`tracks/${CLIENT_ID}`)
   ]);
-  settings = s; promos = p.promos; tracks = tr.tracks;
+  settings=s; promos=p.promos; tracks=tr.tracks;
   fillSettings(); renderPromos(); renderTracks();
-  try { faqItems = JSON.parse(settings.faq_json || '[]'); } catch { faqItems = []; }
+  try { faqItems=JSON.parse(settings.faq_json||'[]'); } catch { faqItems=[]; }
   renderFaqItems();
 }
 
 function fillSettings() {
-  document.getElementById('air_percent_display').value = (settings.air_percent * 100).toFixed(1);
+  document.getElementById('air_percent_display').value = (settings.air_percent*100).toFixed(1);
   document.getElementById('air_per_kg').value = settings.air_per_kg;
-  document.getElementById('truck_percent_display').value = (settings.truck_percent * 100).toFixed(1);
+  document.getElementById('truck_percent_display').value = (settings.truck_percent*100).toFixed(1);
   document.getElementById('truck_per_kg').value = settings.truck_per_kg;
-  document.getElementById('manager_link').value = settings.manager_link || '';
-  document.getElementById('channel_link').value = settings.channel_link || '';
-  document.getElementById('welcome_text').value = settings.welcome_text || '';
+  document.getElementById('manager_link').value = settings.manager_link||'';
+  document.getElementById('channel_link').value = settings.channel_link||'';
+  document.getElementById('welcome_text').value = settings.welcome_text||'';
 }
 
 function updatePreview() {
-  const price = parseFloat(document.getElementById('preview_price').value) || 0;
-  const weight = parseFloat(document.getElementById('preview_weight').value) || 0;
-  const rate = 13;
-  const ap = parseFloat(document.getElementById('air_percent_display').value) / 100 || 0.17;
-  const ak = parseFloat(document.getElementById('air_per_kg').value) || 700;
-  const tp = parseFloat(document.getElementById('truck_percent_display').value) / 100 || 0.11;
-  const tk = parseFloat(document.getElementById('truck_per_kg').value) || 350;
-  if (!price && !weight) { document.getElementById('preview_result').innerHTML = ''; return; }
-  const priceRub = price * rate;
-  document.getElementById('preview_result').innerHTML =
-    `🚛 Авто: <b>${Math.round(priceRub + priceRub*tp + weight*tk).toLocaleString()} ₽</b><br>` +
-    `✈️ Авиа: <b>${Math.round(priceRub + priceRub*ap + weight*ak).toLocaleString()} ₽</b>`;
+  const price=parseFloat(document.getElementById('preview_price').value)||0;
+  const weight=parseFloat(document.getElementById('preview_weight').value)||0;
+  const rate=13;
+  const ap=parseFloat(document.getElementById('air_percent_display').value)/100||0.17;
+  const ak=parseFloat(document.getElementById('air_per_kg').value)||700;
+  const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11;
+  const tk=parseFloat(document.getElementById('truck_per_kg').value)||350;
+  if(!price&&!weight){document.getElementById('preview_result').innerHTML='';return;}
+  const pr=price*rate;
+  document.getElementById('preview_result').innerHTML=
+    `🚛 Авто: <b>${Math.round(pr+pr*tp+weight*tk).toLocaleString()} ₽</b><br>`+
+    `✈️ Авиа: <b>${Math.round(pr+pr*ap+weight*ak).toLocaleString()} ₽</b>`;
 }
 
 async function saveTariffs() {
   try {
     await apiPost(`settings/${CLIENT_ID}`, {
-      air_percent: parseFloat(document.getElementById('air_percent_display').value) / 100,
+      air_percent: parseFloat(document.getElementById('air_percent_display').value)/100,
       air_per_kg: parseFloat(document.getElementById('air_per_kg').value),
-      truck_percent: parseFloat(document.getElementById('truck_percent_display').value) / 100,
+      truck_percent: parseFloat(document.getElementById('truck_percent_display').value)/100,
       truck_per_kg: parseFloat(document.getElementById('truck_per_kg').value),
     });
     showToast('Тарифы сохранены!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
+}
+
+async function applyToBot(section) {
+  try {
+    await apiPost(`apply/${CLIENT_ID}`, { section });
+    showToast('Применено к боту! 🚀');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка применения','err'); }
+}
+
+async function updateToken() {
+  const token = document.getElementById('newTokenInput').value.trim();
+  if(!token || !token.includes(':')) return showToast('Введите корректный токен','err');
+  try {
+    await apiPost(`token/${CLIENT_ID}`, { token });
+    showToast('Токен обновлён! Бот перезапускается...');
+    document.getElementById('newTokenInput').value='';
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка','err'); }
 }
 
 function renderPromos() {
-  const el = document.getElementById('promos-list');
-  if (!promos.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>'; return; }
-  el.innerHTML = promos.map(p => `
+  const el=document.getElementById('promos-list');
+  if(!promos.length){el.innerHTML='<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>';return;}
+  el.innerHTML=promos.map(p=>`
     <div class="promo-item">
       <span class="promo-code">${p.code}</span>
       <div class="promo-right"><span class="promo-discount">-${p.discount}%</span>
@@ -471,31 +424,31 @@ function renderPromos() {
 }
 
 async function addPromo() {
-  const code = document.getElementById('new_promo_code').value.trim().toUpperCase();
-  const discount = parseInt(document.getElementById('new_promo_discount').value);
-  if (!code || !discount) return showToast('Заполни код и скидку', 'err');
+  const code=document.getElementById('new_promo_code').value.trim().toUpperCase();
+  const discount=parseInt(document.getElementById('new_promo_discount').value);
+  if(!code||!discount) return showToast('Заполни код и скидку','err');
   try {
-    await apiPost(`promos/${CLIENT_ID}`, { code, discount });
-    promos.push({ code, discount }); renderPromos();
-    document.getElementById('new_promo_code').value = '';
-    document.getElementById('new_promo_discount').value = '';
+    await apiPost(`promos/${CLIENT_ID}`,{code,discount});
+    promos.push({code,discount}); renderPromos();
+    document.getElementById('new_promo_code').value='';
+    document.getElementById('new_promo_discount').value='';
     showToast('Промокод добавлен!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
 }
 
 async function deletePromo(code) {
   try {
-    await apiDelete(`promos/${CLIENT_ID}`, { code });
-    promos = promos.filter(p => p.code !== code); renderPromos();
+    await apiDelete(`promos/${CLIENT_ID}`,{code});
+    promos=promos.filter(p=>p.code!==code); renderPromos();
     showToast('Промокод удалён');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
 }
 
 function renderTracks() {
-  const el = document.getElementById('tracks-list');
-  if (!tracks.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>'; return; }
-  el.innerHTML = tracks.map(t => `
+  const el=document.getElementById('tracks-list');
+  if(!tracks.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';return;}
+  el.innerHTML=tracks.map(t=>`
     <div class="track-item">
       <div class="track-order">Заказ: ${t.order_id}</div>
       <div class="track-num">${t.track_num}</div>
@@ -503,23 +456,23 @@ function renderTracks() {
 }
 
 async function addTrack() {
-  const order_id = document.getElementById('new_order_id').value.trim();
-  const track_num = document.getElementById('new_track_num').value.trim();
-  if (!order_id || !track_num) return showToast('Заполни все поля', 'err');
+  const order_id=document.getElementById('new_order_id').value.trim();
+  const track_num=document.getElementById('new_track_num').value.trim();
+  if(!order_id||!track_num) return showToast('Заполни все поля','err');
   try {
-    await apiPost(`tracks/${CLIENT_ID}`, { order_id, track_num });
-    tracks.push({ order_id, track_num }); renderTracks();
-    document.getElementById('new_order_id').value = '';
-    document.getElementById('new_track_num').value = '';
+    await apiPost(`tracks/${CLIENT_ID}`,{order_id,track_num});
+    tracks.push({order_id,track_num}); renderTracks();
+    document.getElementById('new_order_id').value='';
+    document.getElementById('new_track_num').value='';
     showToast('Трек добавлен!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
 }
 
 function renderFaqItems() {
-  const el = document.getElementById('faq-list');
-  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>'; return; }
-  el.innerHTML = faqItems.map((item, i) => `
+  const el=document.getElementById('faq-list');
+  if(!faqItems.length){el.innerHTML='<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>';return;}
+  el.innerHTML=faqItems.map((item,i)=>`
     <div class="faq-item">
       <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
       <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div>
@@ -528,32 +481,30 @@ function renderFaqItems() {
     </div>`).join('');
 }
 
-function addFaqItem() { faqItems.push({ question: '', answer: '' }); renderFaqItems(); }
-function removeFaqItem(i) { faqItems.splice(i, 1); renderFaqItems(); }
+function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); }
+function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); }
 
 async function saveFaq() {
   try {
-    await apiPost(`faq/${CLIENT_ID}`, faqItems);
+    await apiPost(`faq/${CLIENT_ID}`,faqItems);
     showToast('FAQ сохранён!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
 }
 
 async function saveGeneral() {
   try {
-    await apiPost(`settings/${CLIENT_ID}`, {
+    await apiPost(`settings/${CLIENT_ID}`,{
       manager_link: document.getElementById('manager_link').value.trim(),
       channel_link: document.getElementById('channel_link').value.trim(),
       welcome_text: document.getElementById('welcome_text').value.trim(),
     });
     showToast('Настройки сохранены!');
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка', 'err'); }
+  } catch { showToast('Ошибка','err'); }
 }
 
-function esc(str) {
-  return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>

@@ -14,11 +14,11 @@ from database.db import (
     init_db, get_settings, update_settings,
     get_promos, add_promo, delete_promo,
     get_all_tracks, add_track,
-    get_client_by_code_and_username
+    get_client_by_code_and_username,
+    update_bot_token
 )
 
 app = FastAPI()
-
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
 @app.on_event("startup")
@@ -56,6 +56,13 @@ class FaqItem(BaseModel):
 class AuthRequest(BaseModel):
     code:     str
     username: str
+    token:    str
+
+class TokenUpdate(BaseModel):
+    token: str
+
+class ApplyRequest(BaseModel):
+    section: str
 
 
 @app.post("/api/auth")
@@ -63,7 +70,25 @@ async def api_auth(body: AuthRequest):
     client = await get_client_by_code_and_username(body.code, body.username)
     if not client:
         raise HTTPException(status_code=401, detail="Неверный код или аккаунт не совпадает")
+    # Сохраняем токен бота
+    if body.token and ":" in body.token:
+        await update_bot_token(client["id"], body.token)
     return {"client_id": client["id"], "bot_name": client["bot_name"]}
+
+
+@app.post("/api/token/{client_id}")
+async def api_update_token(client_id: int, body: TokenUpdate, x_init_data: str = Header(...)):
+    if ":" not in body.token:
+        raise HTTPException(status_code=400, detail="Неверный формат токена")
+    await update_bot_token(client_id, body.token)
+    return {"ok": True}
+
+
+@app.post("/api/apply/{client_id}")
+async def api_apply(client_id: int, body: ApplyRequest, x_init_data: str = Header(...)):
+    # Здесь просто подтверждаем — saas-bot сам читает из БД
+    # В будущем можно добавить перезапуск конкретного бота
+    return {"ok": True, "message": f"Настройки секции '{body.section}' применены"}
 
 
 @app.get("/api/settings/{client_id}")
