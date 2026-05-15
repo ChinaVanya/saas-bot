@@ -6,7 +6,7 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, WebAppInfo, MenuButtonWebApp
+from aiogram.types import Message, CallbackQuery, WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -59,9 +59,6 @@ class CalcStates(StatesGroup):
 class TrackStates(StatesGroup):
     waiting_order = State()
 
-class PromoStates(StatesGroup):
-    waiting_promo = State()
-
 
 def client_menu_kb():
     kb = ReplyKeyboardBuilder()
@@ -70,7 +67,8 @@ def client_menu_kb():
     kb.button(text="🤩 Оформить заказ")
     kb.button(text="📚 FAQ")
     kb.button(text="❓ Вопросы")
-    kb.adjust(2, 2, 1)
+    kb.button(text="⚙️ Панель управления")
+    kb.adjust(2, 2, 2)
     return kb.as_markup(resize_keyboard=True)
 
 
@@ -78,6 +76,15 @@ def back_kb():
     kb = ReplyKeyboardBuilder()
     kb.button(text="◀️ Назад")
     return kb.as_markup(resize_keyboard=True)
+
+
+def panel_kb(client_id: int) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="⚙️ Открыть панель управления",
+            web_app=WebAppInfo(url=f"{MINI_APP_URL}?client_id={client_id}")
+        )
+    ]])
 
 
 def make_dispatcher():
@@ -103,21 +110,25 @@ def make_dispatcher():
         await state.update_data(client_id=client["id"])
         await state.set_state(None)
 
-        # Устанавливаем кнопку меню с client_id для этого пользователя
-        await message.bot.set_chat_menu_button(
-            chat_id=message.chat.id,
-            menu_button=MenuButtonWebApp(
-                text="⚙️ Настройки",
-                web_app=WebAppInfo(url=f"{MINI_APP_URL}?client_id={client['id']}")
-            )
-        )
-
         settings = await get_settings(client["id"])
         await message.answer(
             f"✅ <b>Доступ открыт!</b>\n\n{settings.get('welcome_text', 'Добро пожаловать!')}",
             parse_mode="HTML",
             reply_markup=client_menu_kb()
         )
+        await message.answer(
+            "⚙️ Нажми кнопку чтобы открыть панель управления:",
+            reply_markup=panel_kb(client["id"])
+        )
+
+    @dp.message(F.text == "⚙️ Панель управления")
+    async def open_panel(message: Message, state: FSMContext):
+        data = await state.get_data()
+        client_id = data.get("client_id")
+        if not client_id:
+            await message.answer("Сначала введите код (/start)")
+            return
+        await message.answer("⚙️ Панель управления:", reply_markup=panel_kb(client_id))
 
     @dp.message(F.text == "💸 Калькулятор")
     async def calc_start(message: Message, state: FSMContext):
