@@ -6,7 +6,7 @@ import json
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, WebAppInfo
+from aiogram.types import Message, CallbackQuery, WebAppInfo, MenuButtonWebApp
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -80,12 +80,6 @@ def back_kb():
     return kb.as_markup(resize_keyboard=True)
 
 
-def miniapp_kb(client_id):
-    kb = InlineKeyboardBuilder()
-    kb.button(text="⚙️ Открыть панель управления", web_app=WebAppInfo(url=f"{MINI_APP_URL}?client_id={client_id}"))
-    return kb.as_markup()
-
-
 def make_dispatcher():
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -105,25 +99,27 @@ def make_dispatcher():
         if not client:
             await message.answer("❌ Неверный код или этот код не привязан к вашему аккаунту.\nОбратитесь к продавцу.")
             return
+
         await state.update_data(client_id=client["id"])
         await state.set_state(None)
-        settings = await get_settings(client["id"])
-        # Обновляем кнопку меню с client_id для этого пользователя
-        from aiogram.types import MenuButtonWebApp, WebAppInfo as WAI
+
+        # Устанавливаем кнопку меню с client_id для этого пользователя
         await message.bot.set_chat_menu_button(
             chat_id=message.chat.id,
             menu_button=MenuButtonWebApp(
                 text="⚙️ Настройки",
-                web_app=WAI(url=f"{MINI_APP_URL}?client_id={client['id']}")
+                web_app=WebAppInfo(url=f"{MINI_APP_URL}?client_id={client['id']}")
             )
         )
+
+        settings = await get_settings(client["id"])
         await message.answer(
             f"✅ <b>Доступ открыт!</b>\n\n{settings.get('welcome_text', 'Добро пожаловать!')}",
             parse_mode="HTML",
             reply_markup=client_menu_kb()
         )
 
-@dp.message(F.text == "💸 Калькулятор")
+    @dp.message(F.text == "💸 Калькулятор")
     async def calc_start(message: Message, state: FSMContext):
         data = await state.get_data()
         if not data.get("client_id"):
