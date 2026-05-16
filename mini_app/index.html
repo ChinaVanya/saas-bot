@@ -322,34 +322,34 @@
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Покупатель получит ссылку на выбранный сайт</div>
       <div class="tracking-sites">
         <div class="tracking-site selected" id="site-track24" onclick="selectSite('track24')">
-          <div class="site-name">🇷🇺 Track24</div><div class="site-desc">Лучший для РФ</div>
+          <div class="site-name">🇷🇺 Track24</div><div class="site-desc" style="color:var(--green)">Бесплатный</div>
         </div>
-        <div class="tracking-site" id="site-17track" onclick="selectSite('17track')">
-          <div class="site-name">🌍 17Track</div><div class="site-desc">Международный</div>
+        <div class="tracking-site" id="site-track24api" onclick="selectSite('track24api')">
+          <div class="site-name">🇷🇺 Track24 API</div><div class="site-desc" style="color:#fb923c">Платный</div>
         </div>
       </div>
       <div id="instr-track24" class="tracking-info show">
         <b>📖 Track24.ru — бесплатно</b><br><br>
         Покупатель нажимает ссылку → переходит на track24.ru → вводит трек-номер → видит статус.<br><br>
         <b>Что нужно вам:</b><br>
-        1. Зайдите на track24.ru → зарегистрируйтесь<br>
+        1. Зайдите на track24.ru → зарегистрируйтесь (обычная почта)<br>
         2. В разделе <b>«Посылки»</b> добавьте трек-номер вручную<br>
         3. Сайт автоматически обновляет статус
       </div>
-      <div id="instr-17track" class="tracking-info">
-        <b>📖 17Track.net — с API автостатус</b><br><br>
-        Без API: покупатель переходит по ссылке и вводит трек вручную — бесплатно.<br>
-        С API: бот сам показывает статус и время доставки прямо в чате.<br><br>
+      <div id="instr-track24api" class="tracking-info">
+        <b>📖 Track24 API — платный автостатус</b><br><br>
+        Бот сам показывает статус посылки прямо в чате без перехода на сайт.<br><br>
         <b>Как получить API:</b><br>
-        1. Зайдите на 17track.net → Sign Up<br>
-        2. Developer → API → Create App → получите ключ<br>
-        3. Вставьте ключ ниже (от $0.003 за запрос)
+        1. Зайдите на track24.ru → зарегистрируйтесь<br>
+        2. Перейдите в раздел <b>API</b> или напишите в поддержку<br>
+        3. Получите ключ и вставьте ниже<br>
+        4. Стоимость уточняйте на сайте
       </div>
       <!-- API поле для 17track -->
-      <div class="api-field" id="api-17track-field">
+      <div class="api-field" id="api-track24api-field">
         <div class="field" style="margin-top:10px;margin-bottom:0;">
           <label>API-ключ 17Track</label>
-          <input type="text" id="track17_api" placeholder="Вставьте ваш API-ключ">
+          <input type="text" id="track17_api" placeholder="Вставьте API-ключ Track24">
         </div>
         <button class="btn btn-primary" style="margin-top:10px;" onclick="saveTrack17Api()">Сохранить API-ключ</button>
       </div>
@@ -745,8 +745,8 @@ function selectSite(site,haptic=true){
   document.querySelectorAll('.tracking-site').forEach(el=>el.classList.remove('selected'));
   const el=document.getElementById('site-'+site);if(el)el.classList.add('selected');
   document.getElementById('instr-track24').className='tracking-info'+(site==='track24'?' show':'');
-  document.getElementById('instr-17track').className='tracking-info'+(site==='17track'?' show':'');
-  document.getElementById('api-17track-field').className='api-field'+(site==='17track'?' show':'');
+  document.getElementById('instr-track24api').className='tracking-info'+(site==='track24api'?' show':'');
+  document.getElementById('api-track24api-field').className='api-field'+(site==='track24api'?' show':'');
   if(haptic)tg.HapticFeedback.impactOccurred('light');
 }
 
@@ -758,7 +758,7 @@ async function saveTrack17Api(){
 function renderTracks(){
   const el=document.getElementById('tracks-list');
   if(!tracks.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';return;}
-  const urls={'track24':'https://track24.ru/?code=','17track':'https://www.17track.net/ru/track?nums='};
+  const urls={'track24':'https://track24.ru/?code=','track24api':'https://track24.ru/?code='};
   const base=urls[selectedSite]||urls['track24'];
   el.innerHTML=tracks.map(t=>`<div class="track-item"><div class="track-order">Заказ: ${t.order_id}</div><div class="track-num">${t.track_num}</div><a href="${base+encodeURIComponent(t.track_num)}" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Отследить →</a></div>`).join('');
 }

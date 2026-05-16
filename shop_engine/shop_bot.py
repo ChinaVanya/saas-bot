@@ -19,8 +19,8 @@ from database.db import init_db, get_all_clients, get_settings, check_promo, get
 import aiohttp
 
 TRACKING_URLS = {
-    'track24':  'https://track24.ru/?code=',
-    '17track':  'https://www.17track.net/ru/track?nums=',
+    'track24':     'https://track24.ru/?code=',
+    'track24api':  'https://track24.ru/?code=',
 }
 
 # Статусы 17track на русском
@@ -385,14 +385,11 @@ def make_shop_dispatcher(client_id: int):
         track_url = base_url + track
 
         # Если есть 17track API — показываем статус автоматически
-        if site == "17track" and api17:
+        if site == "track24api" and api17:
             msg = await message.answer("🔍 Запрашиваем статус посылки...")
-            status_data = await get_track17_status(track, api17)
+            status_data = await get_track24_status(track, api17)
             if status_data:
-                status_emoji = {
-                    30: "🚀", 35: "✈️", 40: "🚚", 50: "✅",
-                    60: "↩️", 70: "❌", 80: "🛃"
-                }.get(status_data["status_code"], "📦")
+                status_emoji = "📦"
                 text = (
                     f"📦 <b>Заказ {order_id}</b>\n"
                     f"Трек-номер: <code>{track}</code>\n\n"
@@ -400,7 +397,9 @@ def make_shop_dispatcher(client_id: int):
                 )
                 if status_data["last_event"]:
                     text += f"📍 <b>Последнее событие:</b>\n{status_data['last_event']}\n"
-                text += f"\n<a href=\"{track_url}\">🔗 Подробнее на 17Track</a>"
+                if status_data.get("eta"):
+                    text += f"\n📅 <b>Ожидаемая доставка:</b> {status_data['eta']}\n"
+                text += f"\n<a href=\"{track_url}\">🔗 Подробнее на Track24</a>"
                 await msg.edit_text(text, parse_mode="HTML", reply_markup=main_menu_kb())
             else:
                 await msg.edit_text(
