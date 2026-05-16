@@ -402,33 +402,66 @@ function toggleRemember() {
 function saveSession(clientId, code, token, botName) {
   if (!rememberMe) return;
   const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  localStorage.setItem(REMEMBER_KEY, JSON.stringify({ clientId, code, token, botName, expires }));
+  const data = JSON.stringify({ clientId, code, token, botName, expires });
+  try {
+    tg.CloudStorage.setItem(REMEMBER_KEY, data, () => {});
+  } catch {
+    try { localStorage.setItem(REMEMBER_KEY, data); } catch {}
+  }
 }
 
-function loadSession() {
+function loadSession(callback) {
   try {
-    const raw = localStorage.getItem(REMEMBER_KEY);
-    if (!raw) return null;
+    tg.CloudStorage.getItem(REMEMBER_KEY, (err, raw) => {
+      if (err || !raw) {
+        // Fallback to localStorage
+        try {
+          const lraw = localStorage.getItem(REMEMBER_KEY);
+          if (lraw) { parseAndLogin(lraw, callback); return; }
+        } catch {}
+        callback(null);
+        return;
+      }
+      parseAndLogin(raw, callback);
+    });
+  } catch {
+    try {
+      const raw = localStorage.getItem(REMEMBER_KEY);
+      if (raw) { parseAndLogin(raw, callback); return; }
+    } catch {}
+    callback(null);
+  }
+}
+
+function parseAndLogin(raw, callback) {
+  try {
     const data = JSON.parse(raw);
-    if (Date.now() > data.expires) { localStorage.removeItem(REMEMBER_KEY); return null; }
-    return data;
-  } catch { return null; }
+    if (Date.now() > data.expires) {
+      try { tg.CloudStorage.removeItem(REMEMBER_KEY, ()=>{}); } catch {}
+      try { localStorage.removeItem(REMEMBER_KEY); } catch {}
+      callback(null);
+      return;
+    }
+    callback(data);
+  } catch { callback(null); }
 }
 
 // ── Автовход ──
-window.addEventListener('DOMContentLoaded', async () => {
-  const session = loadSession();
-  if (session) {
-    CLIENT_ID = session.clientId;
-    document.getElementById('botName').textContent = session.botName || 'Мой магазин';
-    try {
-      await loadAll();
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainScreen').style.display = 'block';
-    } catch {
-      localStorage.removeItem(REMEMBER_KEY);
+window.addEventListener('DOMContentLoaded', () => {
+  loadSession(async (session) => {
+    if (session) {
+      CLIENT_ID = session.clientId;
+      document.getElementById('botName').textContent = session.botName || 'Мой магазин';
+      try {
+        await loadAll();
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainScreen').style.display = 'block';
+      } catch {
+        try { tg.CloudStorage.removeItem(REMEMBER_KEY, ()=>{}); } catch {}
+        try { localStorage.removeItem(REMEMBER_KEY); } catch {}
+      }
     }
-  }
+  });
 });
 
 // ── Вход ──
@@ -689,8 +722,14 @@ function selectSite(site) {
 function loadTrackingSite() {
   try {
     const saved = localStorage.getItem('tracking_site_' + CLIENT_ID);
-    if (saved && TRACKING_URLS[saved]) selectSite(saved);
+    if (saved && TRACKING_URLS[saved]) {
+      selectedSite = saved;
+      document.querySelectorAll('.tracking-site').forEach(el => el.classList.remove('selected'));
+      const el = document.getElementById('site-' + saved);
+      if (el) el.classList.add('selected');
+    }
   } catch {}
+  renderTracks();
 }
 
 function renderTracks() {
