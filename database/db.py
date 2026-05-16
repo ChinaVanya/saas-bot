@@ -44,7 +44,19 @@ async def init_db():
             express_percent   REAL DEFAULT 0.25,
             express_per_kg    REAL DEFAULT 1200,
             tariff_enabled    TEXT DEFAULT '{"air":true,"truck":true,"express":true}',
-            tracking_site     TEXT DEFAULT 'track24'
+            tracking_site     TEXT DEFAULT 'track24',
+            currency          TEXT DEFAULT 'RUB',
+            track17_api       TEXT DEFAULT '',
+            openai_api        TEXT DEFAULT '',
+            ai_recognition    INTEGER DEFAULT 0,
+            msg_welcome       TEXT DEFAULT '',
+            msg_calc          TEXT DEFAULT '',
+            msg_order         TEXT DEFAULT '',
+            msg_support       TEXT DEFAULT '',
+            msg_welcome_img   TEXT DEFAULT '',
+            msg_calc_img      TEXT DEFAULT '',
+            msg_order_img     TEXT DEFAULT '',
+            msg_support_img   TEXT DEFAULT ''
         )
     """)
 
