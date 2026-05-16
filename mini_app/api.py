@@ -29,36 +29,37 @@ app.mount("/app", StaticFiles(directory="mini_app", html=True), name="mini_app")
 
 
 class SettingsUpdate(BaseModel):
-    # Тарифы
-    air_percent:    Optional[float] = None
-    air_per_kg:     Optional[float] = None
-    truck_percent:  Optional[float] = None
-    truck_per_kg:   Optional[float] = None
+    air_percent:     Optional[float] = None
+    air_per_kg:      Optional[float] = None
+    truck_percent:   Optional[float] = None
+    truck_per_kg:    Optional[float] = None
     express_percent: Optional[float] = None
     express_per_kg:  Optional[float] = None
     normal_percent:  Optional[float] = None
     normal_per_kg:   Optional[float] = None
     tariff_enabled:  Optional[str]   = None
-    # Контакты
-    manager_link:   Optional[str]   = None
-    channel_link:   Optional[str]   = None
-    # Тексты
-    welcome_text:   Optional[str]   = None
-    faq_json:       Optional[str]   = None
-    # Новые поля
-    currency:       Optional[str]   = None
-    tracking_site:  Optional[str]   = None
-    track17_api:    Optional[str]   = None
-    openai_api:     Optional[str]   = None
-    ai_recognition: Optional[int]   = None
-    msg_welcome:    Optional[str]   = None
-    msg_calc:       Optional[str]   = None
-    msg_order:      Optional[str]   = None
-    msg_support:    Optional[str]   = None
-    msg_welcome_img: Optional[str]  = None
-    msg_calc_img:   Optional[str]   = None
-    msg_order_img:  Optional[str]   = None
-    msg_support_img: Optional[str]  = None
+    tariff_mode:     Optional[str]   = None
+    manager_link:    Optional[str]   = None
+    channel_link:    Optional[str]   = None
+    welcome_text:    Optional[str]   = None
+    faq_json:        Optional[str]   = None
+    currency:        Optional[str]   = None
+    tracking_site:   Optional[str]   = None
+    track17_api:     Optional[str]   = None
+    openai_api:      Optional[str]   = None
+    ai_recognition:  Optional[int]   = None
+    msg_welcome:     Optional[str]   = None
+    msg_calc:        Optional[str]   = None
+    msg_order:       Optional[str]   = None
+    msg_support:     Optional[str]   = None
+    msg_welcome_img: Optional[str]   = None
+    msg_calc_img:    Optional[str]   = None
+    msg_order_img:   Optional[str]   = None
+    msg_support_img: Optional[str]   = None
+
+    class Config:
+        # Разрешаем пустые строки
+        extra = "allow"
 
 
 class PromoAdd(BaseModel):
@@ -125,11 +126,21 @@ async def api_get_settings(client_id: int, x_init_data: str = Header(...)):
 
 @app.post("/api/settings/{client_id}")
 async def api_update_settings(client_id: int, body: SettingsUpdate, x_init_data: str = Header(...)):
-    updates = body.dict(exclude_none=True)
+    # Берём все переданные поля включая пустые строки
+    updates = {}
+    for field, value in body.dict().items():
+        if value is not None:
+            updates[field] = value
+
     if not updates:
-        raise HTTPException(status_code=400, detail="Nothing to update")
-    success = await update_settings(client_id, **updates)
-    return {"ok": success}
+        return {"ok": True}  # Ничего не обновляем но не ошибка
+
+    try:
+        success = await update_settings(client_id, **updates)
+        return {"ok": success}
+    except Exception as e:
+        print(f"Settings update error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/api/promos/{client_id}")

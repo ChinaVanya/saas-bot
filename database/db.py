@@ -1,8 +1,3 @@
-"""
-База данных на asyncpg (PostgreSQL).
-Не требует системных библиотек.
-"""
-
 import os
 import asyncio
 import asyncpg
@@ -32,33 +27,64 @@ async def init_db():
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS bot_settings (
-            client_id     INTEGER PRIMARY KEY,
-            air_percent   REAL DEFAULT 0.17,
-            air_per_kg    REAL DEFAULT 700,
-            truck_percent REAL DEFAULT 0.11,
-            truck_per_kg  REAL DEFAULT 350,
-            manager_link  TEXT DEFAULT '@manager',
-            channel_link  TEXT DEFAULT '@channel',
-            welcome_text  TEXT DEFAULT 'Добро пожаловать! 👋',
-            faq_json          TEXT DEFAULT '[]',
-            express_percent   REAL DEFAULT 0.25,
-            express_per_kg    REAL DEFAULT 1200,
-            tariff_enabled    TEXT DEFAULT '{"air":true,"truck":true,"express":true}',
-            tracking_site     TEXT DEFAULT 'track24',
-            currency          TEXT DEFAULT 'RUB',
-            track17_api       TEXT DEFAULT '',
-            openai_api        TEXT DEFAULT '',
-            ai_recognition    INTEGER DEFAULT 0,
-            msg_welcome       TEXT DEFAULT '',
-            msg_calc          TEXT DEFAULT '',
-            msg_order         TEXT DEFAULT '',
-            msg_support       TEXT DEFAULT '',
-            msg_welcome_img   TEXT DEFAULT '',
-            msg_calc_img      TEXT DEFAULT '',
-            msg_order_img     TEXT DEFAULT '',
-            msg_support_img   TEXT DEFAULT ''
+            client_id       INTEGER PRIMARY KEY,
+            air_percent     REAL DEFAULT 0.17,
+            air_per_kg      REAL DEFAULT 700,
+            truck_percent   REAL DEFAULT 0.11,
+            truck_per_kg    REAL DEFAULT 350,
+            manager_link    TEXT DEFAULT '@manager',
+            channel_link    TEXT DEFAULT '@channel',
+            welcome_text    TEXT DEFAULT 'Добро пожаловать! 👋',
+            faq_json        TEXT DEFAULT '[]',
+            express_percent REAL DEFAULT 0.25,
+            express_per_kg  REAL DEFAULT 1200,
+            tariff_enabled  TEXT DEFAULT '{"air":true,"truck":true,"express":true,"normal":true}',
+            tracking_site   TEXT DEFAULT 'track24',
+            currency        TEXT DEFAULT 'RUB',
+            track17_api     TEXT DEFAULT '',
+            openai_api      TEXT DEFAULT '',
+            ai_recognition  INTEGER DEFAULT 0,
+            msg_welcome     TEXT DEFAULT '',
+            msg_calc        TEXT DEFAULT '',
+            msg_order       TEXT DEFAULT '',
+            msg_support     TEXT DEFAULT '',
+            msg_welcome_img TEXT DEFAULT '',
+            msg_calc_img    TEXT DEFAULT '',
+            msg_order_img   TEXT DEFAULT '',
+            msg_support_img TEXT DEFAULT '',
+            normal_percent  REAL DEFAULT 0.08,
+            normal_per_kg   REAL DEFAULT 200,
+            tariff_mode     TEXT DEFAULT 'mode1'
         )
     """)
+
+    # Добавляем новые колонки если их нет (для существующих таблиц)
+    new_columns = [
+        ("normal_percent",  "REAL DEFAULT 0.08"),
+        ("normal_per_kg",   "REAL DEFAULT 200"),
+        ("tariff_mode",     "TEXT DEFAULT 'mode1'"),
+        ("currency",        "TEXT DEFAULT 'RUB'"),
+        ("tracking_site",   "TEXT DEFAULT 'track24'"),
+        ("track17_api",     "TEXT DEFAULT ''"),
+        ("openai_api",      "TEXT DEFAULT ''"),
+        ("ai_recognition",  "INTEGER DEFAULT 0"),
+        ("msg_welcome",     "TEXT DEFAULT ''"),
+        ("msg_calc",        "TEXT DEFAULT ''"),
+        ("msg_order",       "TEXT DEFAULT ''"),
+        ("msg_support",     "TEXT DEFAULT ''"),
+        ("msg_welcome_img", "TEXT DEFAULT ''"),
+        ("msg_calc_img",    "TEXT DEFAULT ''"),
+        ("msg_order_img",   "TEXT DEFAULT ''"),
+        ("msg_support_img", "TEXT DEFAULT ''"),
+        ("express_percent", "REAL DEFAULT 0.25"),
+        ("express_per_kg",  "REAL DEFAULT 1200"),
+        ("tariff_enabled",  "TEXT DEFAULT '{}'"),
+    ]
+    for col, definition in new_columns:
+        try:
+            await conn.execute(f"ALTER TABLE bot_settings ADD COLUMN IF NOT EXISTS {col} {definition}")
+        except Exception:
+            pass
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS promocodes (
@@ -83,8 +109,6 @@ async def init_db():
     await conn.close()
     print("✅ PostgreSQL база инициализирована")
 
-
-# ── Клиенты ──
 
 async def add_client(username, access_code, bot_token, bot_name) -> bool:
     try:
@@ -147,7 +171,19 @@ async def delete_client(username) -> bool:
     return True
 
 
-# ── Настройки ──
+async def update_bot_token(client_id: int, token: str) -> bool:
+    conn = await get_conn()
+    await conn.execute("UPDATE clients SET bot_token=$1 WHERE id=$2", token, client_id)
+    await conn.close()
+    return True
+
+
+async def get_client_by_id(client_id: int):
+    conn = await get_conn()
+    row = await conn.fetchrow("SELECT * FROM clients WHERE id=$1", client_id)
+    await conn.close()
+    return dict(row) if row else None
+
 
 async def get_settings(client_id) -> dict:
     conn = await get_conn()
@@ -159,15 +195,22 @@ async def get_settings(client_id) -> dict:
 async def update_settings(client_id, **kwargs) -> bool:
     if not kwargs:
         return False
-    fields = ", ".join(f"{k}=${i+2}" for i, k in enumerate(kwargs))
-    values = [client_id] + list(kwargs.values())
+    # Фильтруем только непустые значения (разрешаем пустые строки и 0)
+    valid = {k: v for k, v in kwargs.items() if v is not None}
+    if not valid:
+        return False
+    fields = ", ".join(f"{k}=${i+2}" for i, k in enumerate(valid))
+    values = [client_id] + list(valid.values())
     conn = await get_conn()
-    await conn.execute(f"UPDATE bot_settings SET {fields} WHERE client_id=$1", *values)
+    try:
+        await conn.execute(f"UPDATE bot_settings SET {fields} WHERE client_id=$1", *values)
+    except Exception as e:
+        print(f"update_settings error: {e}")
+        await conn.close()
+        return False
     await conn.close()
     return True
 
-
-# ── Промокоды ──
 
 async def add_promo(client_id, code, discount) -> bool:
     try:
@@ -204,8 +247,6 @@ async def check_promo(client_id, code):
     return row["discount"] if row else None
 
 
-# ── Треки ──
-
 async def add_track(client_id, order_id, track_num) -> bool:
     try:
         conn = await get_conn()
@@ -236,17 +277,3 @@ async def get_all_tracks(client_id) -> list:
 
 if __name__ == "__main__":
     asyncio.run(init_db())
-
-
-async def update_bot_token(client_id: int, token: str) -> bool:
-    conn = await get_conn()
-    await conn.execute("UPDATE clients SET bot_token=$1 WHERE id=$2", token, client_id)
-    await conn.close()
-    return True
-
-
-async def get_client_by_id(client_id: int):
-    conn = await get_conn()
-    row = await conn.fetchrow("SELECT * FROM clients WHERE id=$1", client_id)
-    await conn.close()
-    return dict(row) if row else None

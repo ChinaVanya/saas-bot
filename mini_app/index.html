@@ -145,6 +145,16 @@
   .row .field{flex:1;margin-bottom:0;}
   .section-gap{margin-top:16px;}
   .rate-info{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
+  /* TARIFF MODE BAR */
+  .tariff-mode-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+  .tariff-mode-text{font-size:13px;font-weight:700;}
+  .tariff-mode-badge{display:flex;gap:6px;align-items:center;}
+  .tariff-badge{font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;}
+  .tariff-badge.normal{background:rgba(74,222,128,.15);color:#4ade80;}
+  .tariff-badge.express{background:rgba(167,139,250,.15);color:#a78bfa;}
+  .tariff-badge.truck{background:rgba(251,146,60,.15);color:#fb923c;}
+  .tariff-badge.air{background:rgba(96,165,250,.15);color:#60a5fa;}
+  .tariff-mode-btn{background:var(--accent);border:none;border-radius:8px;color:#fff;font-family:'Manrope',sans-serif;font-size:12px;font-weight:700;padding:6px 12px;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -222,6 +232,19 @@
         </div>
       </div>
       <div class="rate-info" id="rateInfo">Загрузка курсов...</div>
+    </div>
+
+
+    <!-- РЕЖИМ ТАРИФОВ -->
+    <div class="tariff-mode-bar">
+      <div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">АКТИВНЫЕ ТАРИФЫ</div>
+        <div class="tariff-mode-badge" id="tariffModeBadges">
+          <span class="tariff-badge normal">📦 Обычный</span>
+          <span class="tariff-badge express">⚡ Экспресс</span>
+        </div>
+      </div>
+      <button class="tariff-mode-btn" onclick="switchTariffMode()">Поменять</button>
     </div>
 
     <!-- ТАРИФЫ -->
@@ -658,7 +681,38 @@ function fillSettings() {
   catch{tariffEnabled={air:true,truck:true,express:true,normal:true};}
   ['air','truck','express','normal'].forEach(t=>updateTariffUI(t));
   if(settings.tracking_site) selectSite(settings.tracking_site,false);
+  if(settings.tariff_mode){tariffMode=settings.tariff_mode;applyTariffMode();}
   updateRateInfo();
+}
+
+
+// ── Режим тарифов ──
+let tariffMode = 'mode1'; // mode1: Обычный+Экспресс, mode2: Авто+Авиа
+
+const TARIFF_MODES = {
+  mode1: { labels: ['📦 Обычный','⚡ Экспресс'], classes: ['normal','express'], enabled: {normal:true,express:true,truck:false,air:false} },
+  mode2: { labels: ['🚛 Авто','✈️ Авиа'], classes: ['truck','air'], enabled: {normal:false,express:false,truck:true,air:true} },
+};
+
+function switchTariffMode() {
+  tariffMode = tariffMode === 'mode1' ? 'mode2' : 'mode1';
+  applyTariffMode();
+  tg.HapticFeedback.impactOccurred('medium');
+}
+
+function applyTariffMode() {
+  const mode = TARIFF_MODES[tariffMode];
+  // Обновляем badges
+  const badges = document.getElementById('tariffModeBadges');
+  if (badges) {
+    badges.innerHTML = mode.labels.map((l,i) =>
+      `<span class="tariff-badge ${mode.classes[i]}">${l}</span>`
+    ).join('');
+  }
+  // Обновляем tariffEnabled
+  tariffEnabled = {...mode.enabled};
+  ['air','truck','express','normal'].forEach(t => updateTariffUI(t));
+  updatePreview();
 }
 
 // ── Тарифы ──
@@ -703,6 +757,7 @@ async function saveTariffs() {
       tariff_enabled:JSON.stringify(tariffEnabled),
       tracking_site:selectedSite,
       currency:selectedCurrency,
+      tariff_mode:tariffMode,
     });
     showToast('Тарифы сохранены!');tg.HapticFeedback.notificationOccurred('success');
   } catch{showToast('Ошибка','err');}
