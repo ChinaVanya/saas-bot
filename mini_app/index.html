@@ -146,7 +146,8 @@
   .section-gap{margin-top:16px;}
   .rate-info{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;}
   /* TARIFF MODE BAR */
-  .tariff-mode-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;}
+  .tariff-mode-bar{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:14px;width:100%;}
+  .tariff-mode-badges-wrap{display:flex;gap:6px;flex:1;}
   .tariff-mode-text{font-size:13px;font-weight:700;}
   .tariff-mode-badge{display:flex;gap:6px;align-items:center;}
   .tariff-badge{font-size:12px;font-weight:700;padding:4px 8px;border-radius:6px;}
@@ -237,14 +238,14 @@
 
     <!-- РЕЖИМ ТАРИФОВ -->
     <div class="tariff-mode-bar">
-      <div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">АКТИВНЫЕ ТАРИФЫ</div>
-        <div class="tariff-mode-badge" id="tariffModeBadges">
+      <div style="flex:1">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">АКТИВНЫЕ ТАРИФЫ</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="tariffModeBadges">
           <span class="tariff-badge normal">📦 Обычный</span>
           <span class="tariff-badge express">⚡ Экспресс</span>
         </div>
       </div>
-      <button class="tariff-mode-btn" onclick="switchTariffMode()">Поменять</button>
+      <button class="tariff-mode-btn" onclick="switchTariffMode()" style="font-size:18px;padding:6px 14px;">⇄</button>
     </div>
 
     <!-- ТАРИФЫ -->

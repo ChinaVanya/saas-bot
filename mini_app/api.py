@@ -173,7 +173,7 @@ async def api_add_track(client_id: int, body: TrackAdd, x_init_data: str = Heade
 
 @app.post("/api/faq/{client_id}")
 async def api_update_faq(client_id: int, body: List[FaqItem], x_init_data: str = Header(...)):
-    faq_data = [{"question": i.question, "answer": i.answer} for i in body]
+    faq_data = [{"question": i.question, "answer": i.answer} for i in body] 
     faq_json = json.dumps(faq_data, ensure_ascii=False)
     success = await update_settings(client_id, faq_json=faq_json)
     return {"ok": success}

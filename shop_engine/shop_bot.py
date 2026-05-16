@@ -7,7 +7,7 @@ import base64
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, InputMediaPhoto, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, BufferedInputFile
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
@@ -23,163 +23,136 @@ TRACKING_URLS = {
     'track24api':  'https://track24.ru/?code=',
 }
 
-# Статусы 17track на русском
-TRACK17_STATUSES = {
-    0:   "Не найден",
-    10:  "В ожидании",
-    20:  "Информация получена",
-    30:  "В пути",
-    35:  "Прибыл в страну назначения",
-    40:  "На доставке",
-    41:  "Попытка доставки",
-    42:  "Забрать в отделении",
-    50:  "Доставлен",
-    60:  "Возврат",
-    65:  "Возврат завершён",
-    70:  "Утерян",
-    80:  "Таможня",
-}
-
 
 async def get_cny_rate() -> float:
     try:
         async with aiohttp.ClientSession() as session:
-            async with session.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=aiohttp.ClientTimeout(total=5)) as resp:
+            async with session.get(
+                "https://www.cbr-xml-daily.ru/daily_json.js",
+                timeout=aiohttp.ClientTimeout(total=5)
+            ) as resp:
                 data = await resp.json(content_type=None)
                 return round(data["Valute"]["CNY"]["Value"] / data["Valute"]["CNY"]["Nominal"], 2)
     except:
         return 13.0
 
 
-async def get_track17_status(track_num: str, api_key: str) -> dict:
-    """Запрашивает статус посылки через 17track API."""
+async def get_currency_rates():
     try:
         async with aiohttp.ClientSession() as session:
-            # Регистрируем трек
-            await session.post(
-                "https://api.17track.net/track/v2.2/register",
-                headers={"17token": api_key, "Content-Type": "application/json"},
-                json=[{"number": track_num}]
-            )
-            # Получаем статус
-            async with session.post(
-                "https://api.17track.net/track/v2.2/gettrackinfo",
-                headers={"17token": api_key, "Content-Type": "application/json"},
-                json=[{"number": track_num}]
+            async with session.get(
+                "https://www.cbr-xml-daily.ru/daily_json.js",
+                timeout=aiohttp.ClientTimeout(total=5)
             ) as resp:
-                data = await resp.json()
-                if data.get("code") != 0:
-                    return None
-                track_data = data.get("data", {}).get("accepted", [])
-                if not track_data:
-                    return None
-                info = track_data[0].get("track", {})
-                status_code = info.get("e", 0)
-                status_text = TRACK17_STATUSES.get(status_code, "Неизвестно")
-                last_event = ""
-                events = info.get("z0", []) or info.get("z1", [])
-                if events:
-                    last = events[0]
-                    last_event = last.get("z", "")
-                return {
-                    "status": status_text,
-                    "last_event": last_event,
-                    "status_code": status_code
-                }
-    except Exception as e:
-        print(f"17track error: {e}")
-        return None
+                data = await resp.json(content_type=None)
+                cny = data["Valute"]["CNY"]["Value"] / data["Valute"]["CNY"]["Nominal"]
+                usd = data["Valute"]["USD"]["Value"] / data["Valute"]["USD"]["Nominal"]
+                kzt = data["Valute"]["KZT"]["Value"] / data["Valute"]["KZT"]["Nominal"]
+                return {"CNY": cny, "USD": usd, "KZT": kzt}
+    except:
+        return {"CNY": 13.0, "USD": 90.0, "KZT": 0.2}
 
 
 async def calculate(price_cny, weight, settings) -> str:
-    rate = await get_cny_rate()
-    price_rub = price_cny * rate
+    rates = await get_currency_rates()
+    price_rub = price_cny * rates["CNY"]
 
     currency = settings.get("currency", "RUB")
     sym = {"RUB": "₽", "USD": "$", "KZT": "₸"}.get(currency, "₽")
 
-    # Конвертируем если нужно
-    if currency == "USD":
-        usd_rate = await get_usd_rate()
-        price_display = price_rub / usd_rate
-    elif currency == "KZT":
-        kzt_rate = await get_kzt_rate()
-        price_display = price_rub * kzt_rate
-    else:
-        price_display = price_rub
+    def to_display(rub_amount):
+        if currency == "USD":
+            return rub_amount / rates["USD"]
+        elif currency == "KZT":
+            return rub_amount / rates["KZT"]
+        return rub_amount
+
+    price_display = to_display(price_rub)
 
     try:
         enabled = json.loads(settings.get("tariff_enabled", "{}"))
     except:
         enabled = {}
 
+    tariff_mode = settings.get("tariff_mode", "mode1")
+    # mode1 = normal+express, mode2 = truck+air
+    if tariff_mode == "mode1":
+        show = {"normal": enabled.get("normal", True), "express": enabled.get("express", True),
+                "truck": False, "air": False}
+    else:
+        show = {"normal": False, "express": False,
+                "truck": enabled.get("truck", True), "air": enabled.get("air", True)}
+
     lines = [
         f"📊 <b>Расчёт стоимости доставки</b>\n\n"
         f"💰 Цена товара: {price_cny} ¥ = {price_display:.0f} {sym}\n"
         f"⚖️ Вес: {weight} кг\n"
-        f"💱 Курс юаня: {rate} ₽\n"
+        f"💱 Курс юаня: {rates['CNY']:.2f} ₽\n"
     ]
 
-    def calc_tariff(percent, per_kg):
-        svc = price_rub * percent + weight * per_kg
-        total = price_rub + svc
-        if currency == "USD":
-            svc = svc / usd_rate if 'usd_rate' in dir() else svc / 90
-            total = total / usd_rate if 'usd_rate' in dir() else total / 90
-        elif currency == "KZT":
-            svc = svc * kzt_rate if 'kzt_rate' in dir() else svc * 5.5
-            total = total * kzt_rate if 'kzt_rate' in dir() else total * 5.5
-        return svc, total
-
-    if enabled.get("normal", True):
-        np_ = settings.get("normal_percent", 0.08)
-        nk_ = settings.get("normal_per_kg", 200)
+    if show.get("normal"):
+        np_ = settings.get("normal_percent", 0.08) or 0.08
+        nk_ = settings.get("normal_per_kg", 200) or 200
         svc = price_rub * np_ + weight * nk_
-        total = price_rub + svc
-        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
+        total = to_display(price_rub + svc)
+        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
 
-    if enabled.get("truck", True):
-        tp_ = settings.get("truck_percent", 0.11)
-        tk_ = settings.get("truck_per_kg", 350)
+    if show.get("truck"):
+        tp_ = settings.get("truck_percent", 0.11) or 0.11
+        tk_ = settings.get("truck_per_kg", 350) or 350
         svc = price_rub * tp_ + weight * tk_
-        total = price_rub + svc
-        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
+        total = to_display(price_rub + svc)
+        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
 
-    if enabled.get("air", True):
-        ap_ = settings.get("air_percent", 0.17)
-        ak_ = settings.get("air_per_kg", 700)
+    if show.get("air"):
+        ap_ = settings.get("air_percent", 0.17) or 0.17
+        ak_ = settings.get("air_per_kg", 700) or 700
         svc = price_rub * ap_ + weight * ak_
-        total = price_rub + svc
-        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
+        total = to_display(price_rub + svc)
+        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
 
-    if enabled.get("express", True):
-        ep_ = settings.get("express_percent", 0.25)
-        ek_ = settings.get("express_per_kg", 1200)
+    if show.get("express"):
+        ep_ = settings.get("express_percent", 0.25) or 0.25
+        ek_ = settings.get("express_per_kg", 1200) or 1200
         svc = price_rub * ep_ + weight * ek_
-        total = price_rub + svc
-        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
+        total = to_display(price_rub + svc)
+        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
 
     return "".join(lines)
 
 
-async def get_usd_rate():
+async def recognize_photo(photo_bytes: bytes, api_key: str) -> str | None:
+    """Распознаёт цену и вес на скриншоте через OpenAI."""
+    b64 = base64.b64encode(photo_bytes).decode('utf-8')
     try:
-        async with aiohttp.ClientSession() as s:
-            async with s.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=aiohttp.ClientTimeout(total=5)) as r:
-                d = await r.json(content_type=None)
-                return d["Valute"]["USD"]["Value"]
-    except:
-        return 90.0
-
-
-async def get_kzt_rate():
-    try:
-        async with aiohttp.ClientSession() as s:
-            async with s.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=aiohttp.ClientTimeout(total=5)) as r:
-                d = await r.json(content_type=None)
-                return 1 / (d["Valute"]["KZT"]["Value"] / d["Valute"]["KZT"]["Nominal"])
-    except:
-        return 5.5
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "gpt-4o-mini",
+                    "max_tokens": 60,
+                    "messages": [{
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": "Identify the product price in Yuan (¥) and estimate its weight in kg. Return ONLY format: price;weight;name. Example: 25;0.2;AirPods. If not found return: ERROR"},
+                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
+                        ]
+                    }]
+                },
+                timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
+                if resp.status != 200:
+                    print(f"OpenAI error status: {resp.status}")
+                    return None
+                data = await resp.json()
+                return data["choices"][0]["message"]["content"].strip()
+    except Exception as e:
+        print(f"OpenAI request error: {e}")
+        return None
 
 
 class CalcStates(StatesGroup):
@@ -220,16 +193,15 @@ def back_kb():
 
 
 async def send_msg_with_img(message: Message, text: str, img_b64: str, reply_markup=None):
-    """Отправляет сообщение с изображением если оно есть."""
     if img_b64 and img_b64.startswith("data:image"):
         try:
-            header, data = img_b64.split(",", 1)
+            _, data = img_b64.split(",", 1)
             img_bytes = base64.b64decode(data)
             photo = BufferedInputFile(img_bytes, filename="image.jpg")
             await message.answer_photo(photo, caption=text, parse_mode="HTML", reply_markup=reply_markup)
             return
-        except:
-            pass
+        except Exception as e:
+            print(f"Image send error: {e}")
     await message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
 
 
@@ -262,11 +234,14 @@ def make_shop_dispatcher(client_id: int):
         settings = await get_settings(client_id)
         ai_on = settings.get("ai_recognition", 0) == 1
         ai_key = settings.get("openai_api", "")
+        await state.set_state(CalcStates.waiting_price)
         if ai_on and ai_key:
-            await state.set_state(CalcStates.waiting_price)
-            await message.answer("Введите цену товара в ¥ или пришлите <b>скриншот</b> из магазина:", parse_mode="HTML", reply_markup=back_kb())
+            await message.answer(
+                "Пришлите <b>скриншот товара</b> с ценой или введите цену в ¥:",
+                parse_mode="HTML",
+                reply_markup=back_kb()
+            )
         else:
-            await state.set_state(CalcStates.waiting_price)
             await message.answer("Введите цену товара в ¥:", reply_markup=back_kb())
 
     @dp.message(CalcStates.waiting_price, F.photo)
@@ -279,34 +254,37 @@ def make_shop_dispatcher(client_id: int):
             await message.answer("Распознавание скриншотов отключено. Введите цену числом:")
             return
 
-        msg = await message.answer("🔍 Анализируем скриншот...")
+        msg = await message.answer("🧪 Анализируем скриншот...")
+
+        # Скачиваем фото
         photo = message.photo[-1]
         file_info = await message.bot.get_file(photo.file_id)
-        photo_bytes = await message.bot.download_file(file_info.file_path)
-        b64 = base64.b64encode(photo_bytes.getvalue()).decode()
+        photo_bytes_io = await message.bot.download_file(file_info.file_path)
+        photo_bytes = photo_bytes_io.getvalue()
+
+        # Распознаём через aiohttp (не блокирует event loop)
+        result = await recognize_photo(photo_bytes, ai_key)
+
+        if not result or "ERROR" in result or ";" not in result:
+            await msg.edit_text("❌ Не удалось найти цену. Введите вручную:")
+            return
 
         try:
-            from openai import OpenAI
-            oa = OpenAI(api_key=ai_key)
-            response = oa.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": [
-                    {"type": "text", "text": "Find product price in Yuan (¥) and estimate weight in kg. Return ONLY: price;weight;name. Example: 299;1.2;Кроссовки. If not found: ERROR"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
-                ]}],
-                max_tokens=60
-            )
-            result = response.choices[0].message.content.strip()
-            if "ERROR" in result or ";" not in result:
-                await msg.edit_text("❌ Не удалось найти цену. Введите вручную:")
-                return
-            price, weight, name = result.split(";", 2)
-            price, weight = float(price.strip()), float(weight.strip())
+            parts = result.split(";", 2)
+            price = float(parts[0].strip())
+            weight = float(parts[1].strip())
+            name = parts[2].strip() if len(parts) > 2 else "Товар"
+
             calc_result = await calculate(price, weight, settings)
             await state.clear()
-            await msg.edit_text(f"✅ <b>Распознано:</b> {name.strip()}\n\n{calc_result}", parse_mode="HTML", reply_markup=calc_menu_kb())
+            await msg.edit_text(
+                f"✅ <b>Распознано:</b> 📦 {name}\n\n{calc_result}",
+                parse_mode="HTML",
+                reply_markup=calc_menu_kb()
+            )
         except Exception as e:
-            await msg.edit_text(f"❌ Ошибка распознавания. Введите цену вручную:")
+            print(f"Parse error: {e}, result: {result}")
+            await msg.edit_text("❌ Ошибка обработки. Введите цену вручную:")
 
     @dp.message(CalcStates.waiting_price, F.text)
     async def calc_price(message: Message, state: FSMContext):
@@ -354,7 +332,10 @@ def make_shop_dispatcher(client_id: int):
         discount = await check_promo(client_id, message.text.strip())
         await state.clear()
         if discount:
-            await message.answer(f"✅ Промокод активирован! Скидка: <b>{discount}%</b>", parse_mode="HTML", reply_markup=calc_menu_kb())
+            await message.answer(
+                f"✅ Промокод активирован! Скидка: <b>{discount}%</b>",
+                parse_mode="HTML", reply_markup=calc_menu_kb()
+            )
         else:
             await message.answer("❌ Промокод не найден.", reply_markup=calc_menu_kb())
 
@@ -380,41 +361,16 @@ def make_shop_dispatcher(client_id: int):
 
         settings = await get_settings(client_id)
         site = settings.get("tracking_site", "track24")
-        api17 = settings.get("track17_api", "")
         base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
         track_url = base_url + track
 
-        # Если есть 17track API — показываем статус автоматически
-        if site == "track24api" and api17:
-            msg = await message.answer("🔍 Запрашиваем статус посылки...")
-            status_data = await get_track24_status(track, api17)
-            if status_data:
-                status_emoji = "📦"
-                text = (
-                    f"📦 <b>Заказ {order_id}</b>\n"
-                    f"Трек-номер: <code>{track}</code>\n\n"
-                    f"{status_emoji} <b>Статус:</b> {status_data['status']}\n"
-                )
-                if status_data["last_event"]:
-                    text += f"📍 <b>Последнее событие:</b>\n{status_data['last_event']}\n"
-                if status_data.get("eta"):
-                    text += f"\n📅 <b>Ожидаемая доставка:</b> {status_data['eta']}\n"
-                text += f"\n<a href=\"{track_url}\">🔗 Подробнее на Track24</a>"
-                await msg.edit_text(text, parse_mode="HTML", reply_markup=main_menu_kb())
-            else:
-                await msg.edit_text(
-                    f"📦 <b>Заказ {order_id}</b>\n"
-                    f"Трек-номер: <code>{track}</code>\n\n"
-                    f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-                    parse_mode="HTML", reply_markup=main_menu_kb()
-                )
-        else:
-            await message.answer(
-                f"📦 <b>Заказ {order_id}</b>\n"
-                f"Трек-номер: <code>{track}</code>\n\n"
-                f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-                parse_mode="HTML", reply_markup=main_menu_kb()
-            )
+        await message.answer(
+            f"📦 <b>Заказ {order_id}</b>\n"
+            f"Трек-номер: <code>{track}</code>\n\n"
+            f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
+            parse_mode="HTML",
+            reply_markup=main_menu_kb()
+        )
 
     @dp.message(F.text == "🤩 Оформить заказ")
     async def order_msg(message: Message):
@@ -455,7 +411,10 @@ def make_shop_dispatcher(client_id: int):
             faq = json.loads(settings.get("faq_json", "[]"))
             idx = int(callback.data.split("_")[1])
             item = faq[idx]
-            await callback.message.answer(f"❓ <b>{item['question']}</b>\n\n{item['answer']}", parse_mode="HTML")
+            await callback.message.answer(
+                f"❓ <b>{item['question']}</b>\n\n{item['answer']}",
+                parse_mode="HTML"
+            )
         except:
             await callback.message.answer("Ошибка загрузки FAQ.")
         await callback.answer()
