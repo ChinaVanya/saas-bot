@@ -27,6 +27,13 @@ GPT_LIMIT = 5
 gpt_usage = {}
 
 
+TRACKING_URLS = {
+    'track24':  'https://track24.ru/?code=',
+    '17track':  'https://www.17track.net/ru/track?nums=',
+    'pochta':   'https://www.pochta.ru/tracking#',
+    'cainiao':  'https://global.cainiao.com/detail.htm?mailNoList=',
+}
+
 async def get_cny_rate() -> float:
     try:
         async with aiohttp.ClientSession() as session:
@@ -94,7 +101,7 @@ def make_shop_dispatcher(client_id: int):
         manager = settings.get("manager_link", "@manager")
         channel = settings.get("channel_link", "@channel")
         await message.answer(
-            f"{text}",
+            f"{text}\n\n📦 Оформление заказов: {manager}\n📢 Наш канал: {channel}",
             reply_markup=main_menu_kb()
         )
 
@@ -201,10 +208,21 @@ def make_shop_dispatcher(client_id: int):
             await state.clear()
             await message.answer("Главное меню:", reply_markup=main_menu_kb())
             return
-        track = await get_track(client_id, message.text.strip())
+        order_id = message.text.strip()
+        track = await get_track(client_id, order_id)
         await state.clear()
         if track:
-            await message.answer(f"📦 Трек-номер: <code>{track}</code>", parse_mode="HTML", reply_markup=main_menu_kb())
+            settings = await get_settings(client_id)
+            site = settings.get("tracking_site", "track24")
+            base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
+            track_url = base_url + track
+            await message.answer(
+                f"📦 <b>Заказ {order_id}</b>\n"
+                f"Трек-номер: <code>{track}</code>\n\n"
+                f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
+                parse_mode="HTML",
+                reply_markup=main_menu_kb()
+            )
         else:
             await message.answer("❌ Заказ не найден. Обратитесь к менеджеру.", reply_markup=main_menu_kb())
 

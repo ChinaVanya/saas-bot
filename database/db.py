@@ -43,7 +43,8 @@ async def init_db():
             faq_json          TEXT DEFAULT '[]',
             express_percent   REAL DEFAULT 0.25,
             express_per_kg    REAL DEFAULT 1200,
-            tariff_enabled    TEXT DEFAULT '{"air":true,"truck":true,"express":true}'
+            tariff_enabled    TEXT DEFAULT '{"air":true,"truck":true,"express":true}',
+            tracking_site     TEXT DEFAULT 'track24'
         )
     """)
 

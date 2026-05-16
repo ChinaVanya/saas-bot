@@ -71,6 +71,7 @@
   .tariff-type.air { color:#60a5fa; }
   .tariff-type.truck { color:#fb923c; }
   .tariff-type.express { color:#a78bfa; }
+  .tariff-type.normal { color:#4ade80; }
   .tariff-toggle { width:28px; height:28px; border-radius:8px; border:none; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
   .tariff-toggle.active { background:rgba(239,68,68,.15); color:var(--red); }
   .tariff-toggle.inactive { background:rgba(34,197,94,.15); color:var(--green); }
@@ -116,6 +117,13 @@
   .toast.err { border-color:var(--red); color:var(--red); }
 
   .empty { text-align:center; padding:30px 0; color:var(--muted); font-size:14px; }
+
+  /* TRACKING */
+  .tracking-sites { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
+  .tracking-site { background:var(--surface2); border:2px solid var(--border); border-radius:10px; padding:10px 8px; text-align:center; cursor:pointer; transition:all .2s; }
+  .tracking-site.selected { border-color:var(--accent); background:rgba(108,99,255,.1); }
+  .tracking-site .site-name { font-size:13px; font-weight:700; margin-bottom:2px; }
+  .tracking-site .site-desc { font-size:10px; color:var(--muted); }
   .empty-icon { font-size:32px; margin-bottom:8px; }
   .row { display:flex; gap:10px; }
   .row .field { flex:1; margin-bottom:0; }
@@ -253,7 +261,7 @@
       <!-- ОБЫЧНЫЙ -->
       <div class="tariff-block" id="block-normal">
         <div class="tariff-header">
-          <span class="tariff-type" style="color:#4ade80">📦 Обычный</span>
+          <span class="tariff-type normal">📦 Обычный</span>
           <button class="tariff-toggle active" id="toggle-normal" onclick="toggleTariff('normal')">−</button>
         </div>
         <div class="tariff-inputs">
@@ -261,15 +269,13 @@
             <input type="number" id="normal_percent_display" placeholder="8" step="0.1" oninput="updatePreview()">
             <small>Комиссия %</small>
           </div>
-        <div class="tariff-field">
-          <input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()">
-          <small>₽ за кг</small>
+          <div class="tariff-field">
+            <input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()">
+            <small>₽ за кг</small>
+          </div>
         </div>
       </div>
     </div>
-  </div>
-
-      
 
     <div class="card">
       <div class="card-title">Предпросмотр</div>
@@ -301,6 +307,29 @@
   <!-- ТРЕКИ -->
   <div class="page" id="page-tracks">
     <div class="card">
+      <div class="card-title">Сайт отслеживания</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Покупатель получит кликабельную ссылку на выбранный сайт</div>
+      <div class="tracking-sites">
+        <div class="tracking-site selected" id="site-track24" onclick="selectSite('track24')">
+          <div class="site-name">🇷🇺 Track24</div>
+          <div class="site-desc">Лучший для РФ</div>
+        </div>
+        <div class="tracking-site" id="site-17track" onclick="selectSite('17track')">
+          <div class="site-name">🌍 17Track</div>
+          <div class="site-desc">Международный</div>
+        </div>
+        <div class="tracking-site" id="site-pochta" onclick="selectSite('pochta')">
+          <div class="site-name">📮 Почта РФ</div>
+          <div class="site-desc">pochta.ru</div>
+        </div>
+        <div class="tracking-site" id="site-cainiao" onclick="selectSite('cainiao')">
+          <div class="site-name">📦 Cainiao</div>
+          <div class="site-desc">AliExpress</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <div class="card-title">Добавить трек-номер</div>
       <div class="field"><label>Номер заказа</label><input type="text" id="new_order_id" placeholder="ORD-001"></div>
       <div class="field"><label>Трек-номер</label><input type="text" id="new_track_num" placeholder="RU123456789CN"></div>
@@ -323,10 +352,7 @@
     <div class="card">
       <div class="card-title">Предлагаемые вопросы</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Нажмите чтобы добавить в список</div>
-      <button class="btn-suggest" onclick="addSuggestedFaq('Как скачать приложение?', 'Для оформления заказа приложение не требуется. Просто напишите нам в бот или менеджеру.')">➕ Как скачать приложение?</button>
-      <button class="btn-suggest" onclick="addSuggestedFaq('Как оформить заказ?', 'Отправьте менеджеру ссылку на товар или скриншот, укажите размер и количество. Менеджер рассчитает стоимость и оформит заказ.')">➕ Как оформить заказ?</button>
-      <button class="btn-suggest" onclick="addSuggestedFaq('Доставка и комиссия', 'Мы предлагаем несколько вариантов доставки. Используйте калькулятор в боте чтобы рассчитать точную стоимость для вашего товара.')">➕ Доставка и комиссия</button>
-      <button class="btn-suggest" onclick="addSuggestedFaq('Экспресс доставка', 'Экспресс доставка занимает 5-7 дней. Стоимость выше стандартной, но товар придёт значительно быстрее.')">➕ Экспресс доставка</button>
+      <div id="suggested-list"></div>
     </div>
 
     <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
@@ -489,6 +515,8 @@ async function loadAll() {
   fillSettings(); renderPromos(); renderTracks();
   try { faqItems=JSON.parse(settings.faq_json||'[]'); } catch { faqItems=[]; }
   renderFaqItems();
+  renderSuggested();
+  loadTrackingSite();
 }
 
 function fillSettings() {
@@ -498,6 +526,8 @@ function fillSettings() {
   document.getElementById('truck_per_kg').value = settings.truck_per_kg;
   document.getElementById('express_percent_display').value = settings.express_percent ? (settings.express_percent*100).toFixed(1) : '25';
   document.getElementById('express_per_kg').value = settings.express_per_kg || '1200';
+  document.getElementById('normal_percent_display').value = settings.normal_percent ? (settings.normal_percent*100).toFixed(1) : '8';
+  document.getElementById('normal_per_kg').value = settings.normal_per_kg || '200';
   document.getElementById('manager_link').value = settings.manager_link||'';
   document.getElementById('channel_link').value = settings.channel_link||'';
   document.getElementById('welcome_text').value = settings.welcome_text||'';
@@ -505,9 +535,9 @@ function fillSettings() {
   // Загружаем состояние тарифов
   try {
     const saved = JSON.parse(settings.tariff_enabled||'{}');
-    tariffEnabled = { air: saved.air!==false, truck: saved.truck!==false, express: saved.express!==false };
+    tariffEnabled = { air: saved.air!==false, truck: saved.truck!==false, express: saved.express!==false, normal: saved.normal!==false };
   } catch { tariffEnabled = { air:true, truck:true, express:true }; }
-  ['air','truck','express'].forEach(t => updateTariffUI(t));
+  ['air','truck','express','normal'].forEach(t => updateTariffUI(t));
 }
 
 // ── Тарифы ──
@@ -551,7 +581,12 @@ function updatePreview() {
   if(tariffEnabled.express){
     const ep=parseFloat(document.getElementById('express_percent_display').value)/100||0.25;
     const ek=parseFloat(document.getElementById('express_per_kg').value)||1200;
-    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b>`;
+    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b><br>`;
+  }
+  if(tariffEnabled.normal){
+    const np=parseFloat(document.getElementById('normal_percent_display').value)/100||0.08;
+    const nk=parseFloat(document.getElementById('normal_per_kg').value)||200;
+    html+=`📦 Обычный: <b>${Math.round(pr+pr*np+weight*nk).toLocaleString()} ₽</b>`;
   }
   document.getElementById('preview_result').innerHTML=html||'<span style="color:var(--muted)">Все тарифы отключены</span>';
 }
@@ -565,6 +600,10 @@ async function saveTariffs() {
       truck_per_kg: parseFloat(document.getElementById('truck_per_kg').value),
       express_percent: parseFloat(document.getElementById('express_percent_display').value)/100,
       express_per_kg: parseFloat(document.getElementById('express_per_kg').value),
+      express_percent: parseFloat(document.getElementById('express_percent_display').value)/100,
+      express_per_kg: parseFloat(document.getElementById('express_per_kg').value),
+      normal_percent: parseFloat(document.getElementById('normal_percent_display').value)/100,
+      normal_per_kg: parseFloat(document.getElementById('normal_per_kg').value),
       tariff_enabled: JSON.stringify(tariffEnabled),
     });
     showToast('Тарифы сохранены!');
@@ -629,14 +668,43 @@ async function deletePromo(code) {
 }
 
 // ── Треки ──
+const TRACKING_URLS = {
+  'track24':  'https://track24.ru/?code=',
+  '17track':  'https://www.17track.net/ru/track?nums=',
+  'pochta':   'https://www.pochta.ru/tracking#',
+  'cainiao':  'https://global.cainiao.com/detail.htm?mailNoList=',
+};
+let selectedSite = 'track24';
+
+function selectSite(site) {
+  selectedSite = site;
+  document.querySelectorAll('.tracking-site').forEach(el => el.classList.remove('selected'));
+  document.getElementById('site-' + site).classList.add('selected');
+  // Сохраняем выбор
+  try { localStorage.setItem('tracking_site_' + CLIENT_ID, site); } catch {}
+  renderTracks();
+  tg.HapticFeedback.impactOccurred('light');
+}
+
+function loadTrackingSite() {
+  try {
+    const saved = localStorage.getItem('tracking_site_' + CLIENT_ID);
+    if (saved && TRACKING_URLS[saved]) selectSite(saved);
+  } catch {}
+}
+
 function renderTracks() {
   const el=document.getElementById('tracks-list');
   if(!tracks.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';return;}
-  el.innerHTML=tracks.map(t=>`
+  el.innerHTML=tracks.map(t=>{
+    const url = TRACKING_URLS[selectedSite] + encodeURIComponent(t.track_num);
+    return `
     <div class="track-item">
       <div class="track-order">Заказ: ${t.order_id}</div>
       <div class="track-num">${t.track_num}</div>
-    </div>`).join('');
+      <a href="${url}" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Отследить →</a>
+    </div>`;
+  }).join('');
 }
 async function addTrack() {
   const order_id=document.getElementById('new_order_id').value.trim();
@@ -644,6 +712,8 @@ async function addTrack() {
   if(!order_id||!track_num) return showToast('Заполни все поля','err');
   try {
     await apiPost(`tracks/${CLIENT_ID}`,{order_id,track_num});
+    // Сохраняем выбранный сайт трекинга в настройки
+    await apiPost(`settings/${CLIENT_ID}`,{tracking_site: selectedSite});
     tracks.push({order_id,track_num}); renderTracks();
     document.getElementById('new_order_id').value='';
     document.getElementById('new_track_num').value='';
@@ -664,10 +734,29 @@ function renderFaqItems() {
       <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
     </div>`).join('');
 }
-function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); }
-function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); }
+const SUGGESTED_FAQ = [
+  {question:'Как скачать приложение?', answer:'Для оформления заказа приложение не требуется. Просто напишите нам в бот или менеджеру.'},
+  {question:'Как оформить заказ?', answer:'Отправьте менеджеру ссылку на товар или скриншот, укажите размер и количество. Менеджер рассчитает стоимость и оформит заказ.'},
+  {question:'Доставка и комиссия', answer:'Мы предлагаем несколько вариантов доставки. Используйте калькулятор в боте чтобы рассчитать точную стоимость для вашего товара.'},
+  {question:'Экспресс доставка', answer:'Экспресс доставка занимает 5-7 дней. Стоимость выше стандартной, но товар придёт значительно быстрее.'},
+];
+
+function renderSuggested() {
+  const el = document.getElementById('suggested-list');
+  const usedQuestions = faqItems.map(f => f.question);
+  const available = SUGGESTED_FAQ.filter(s => !usedQuestions.includes(s.question));
+  if (!available.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Все вопросы добавлены ✅</div>';
+    return;
+  }
+  el.innerHTML = available.map(s =>
+    \`<button class="btn-suggest" onclick="addSuggestedFaq(\\`\${esc(s.question)}\\`, \\`\${esc(s.answer)}\\`)">➕ \${s.question}</button>\`
+  ).join('');
+}
+function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); renderSuggested(); }
+function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); renderSuggested(); }
 function addSuggestedFaq(question, answer) {
-  faqItems.push({question, answer}); renderFaqItems();
+  faqItems.push({question, answer}); renderFaqItems(); renderSuggested();
   showToast('Вопрос добавлен!');
   tg.HapticFeedback.impactOccurred('light');
 }
