@@ -191,8 +191,7 @@ async def get_aftership_status(track_num: str, api_key: str) -> list:
                     time = cp.get("checkpoint_time", "")[11:16]
                     location = cp.get("city") or cp.get("location") or cp.get("country_name", "")
                     message = cp.get("message", "")
-                    result.append(f"📍 <b>{location}</b> {date} {time}
-{message}")
+                    result.append(f"📍 <b>{location}</b> {date} {time}\n{message}")
                 return result
     except Exception as e:
         print(f"AfterShip error: {e}")
