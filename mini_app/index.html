@@ -238,14 +238,11 @@
 
     <!-- РЕЖИМ ТАРИФОВ -->
     <div class="tariff-mode-bar">
-      <div style="flex:1">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">АКТИВНЫЕ ТАРИФЫ</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;" id="tariffModeBadges">
-          <span class="tariff-badge normal">📦 Обычный</span>
-          <span class="tariff-badge express">⚡ Экспресс</span>
-        </div>
+      <div id="tariffModeBadges" style="display:flex;gap:8px;flex:1;align-items:stretch;">
+        <span class="tariff-badge normal" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 8px;font-size:13px;border-radius:8px;">📦 Обычный</span>
+        <span class="tariff-badge express" style="flex:1;display:flex;align-items:center;justify-content:center;padding:10px 8px;font-size:13px;border-radius:8px;">⚡ Экспресс</span>
       </div>
-      <button class="tariff-mode-btn" onclick="switchTariffMode()" style="font-size:18px;padding:6px 14px;">⇄</button>
+      <button class="tariff-mode-btn" onclick="switchTariffMode()" style="font-size:20px;padding:8px 16px;margin-left:10px;align-self:stretch;">⇄</button>
     </div>
 
     <!-- ТАРИФЫ -->
@@ -373,7 +370,7 @@
       <div class="api-field" id="api-track24api-field">
         <div class="field" style="margin-top:10px;margin-bottom:0;">
           <label>API-ключ 17Track</label>
-          <input type="text" id="track17_api" placeholder="Вставьте API-ключ Track24">
+          <input type="text" id="track17_api" placeholder="ключ|домен (например: abc123|track24.ru)">
         </div>
         <button class="btn btn-primary" style="margin-top:10px;" onclick="saveTrack17Api()">Сохранить API-ключ</button>
       </div>

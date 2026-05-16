@@ -124,35 +124,79 @@ async def calculate(price_cny, weight, settings) -> str:
 async def recognize_photo(photo_bytes: bytes, api_key: str) -> str | None:
     """Распознаёт цену и вес на скриншоте через OpenAI."""
     b64 = base64.b64encode(photo_bytes).decode('utf-8')
+    payload = {
+        "model": "gpt-4o-mini",
+        "max_tokens": 60,
+        "messages": [{
+            "role": "user",
+            "content": [
+                {"type": "text", "text": "Identify the product price in Yuan (¥) and estimate its weight in kg. Return ONLY format: price;weight;name. Example: 25;0.2;AirPods. If not found return: ERROR"},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "low"}}
+            ]
+        }]
+    }
     try:
         async with aiohttp.ClientSession() as session:
             async with session.post(
                 "https://api.openai.com/v1/chat/completions",
                 headers={
-                    "Authorization": f"Bearer {api_key}",
+                    "Authorization": f"Bearer {api_key.strip()}",
                     "Content-Type": "application/json"
                 },
-                json={
-                    "model": "gpt-4o-mini",
-                    "max_tokens": 60,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": "Identify the product price in Yuan (¥) and estimate its weight in kg. Return ONLY format: price;weight;name. Example: 25;0.2;AirPods. If not found return: ERROR"},
-                            {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
-                        ]
-                    }]
+                json=payload,
+                timeout=aiohttp.ClientTimeout(total=45)
+            ) as resp:
+                raw = await resp.text()
+                print(f"OpenAI status: {resp.status}, response: {raw[:200]}")
+                if resp.status != 200:
+                    return None
+                data = await resp.json(content_type=None)
+                result = data["choices"][0]["message"]["content"].strip()
+                print(f"OpenAI result: {result}")
+                return result
+    except Exception as e:
+        print(f"OpenAI request error: {type(e).__name__}: {e}")
+        return None
+
+
+async def get_aftership_status(track_num: str, api_key: str) -> list:
+    """Получает последние 3 события посылки через AfterShip API."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Сначала добавляем трекинг
+            await session.post(
+                "https://api.aftership.com/v4/trackings",
+                headers={
+                    "aftership-api-key": api_key.strip(),
+                    "Content-Type": "application/json"
                 },
-                timeout=aiohttp.ClientTimeout(total=30)
+                json={"tracking": {"tracking_number": track_num}},
+                timeout=aiohttp.ClientTimeout(total=10)
+            )
+            # Получаем данные
+            async with session.get(
+                f"https://api.aftership.com/v4/trackings/{track_num}",
+                headers={"aftership-api-key": api_key.strip()},
+                timeout=aiohttp.ClientTimeout(total=10)
             ) as resp:
                 if resp.status != 200:
-                    print(f"OpenAI error status: {resp.status}")
-                    return None
+                    print(f"AfterShip error: {resp.status}")
+                    return []
                 data = await resp.json()
-                return data["choices"][0]["message"]["content"].strip()
+                checkpoints = data.get("data", {}).get("tracking", {}).get("checkpoints", [])
+                # Берём последние 3 события
+                result = []
+                for cp in reversed(checkpoints[-3:]):
+                    date = cp.get("checkpoint_time", "")[:10]
+                    time = cp.get("checkpoint_time", "")[11:16]
+                    location = cp.get("city") or cp.get("location") or cp.get("country_name", "")
+                    message = cp.get("message", "")
+                    result.append(f"📍 <b>{location}</b> {date} {time}
+{message}")
+                return result
     except Exception as e:
-        print(f"OpenAI request error: {e}")
-        return None
+        print(f"AfterShip error: {e}")
+        return []
 
 
 class CalcStates(StatesGroup):
@@ -361,16 +405,38 @@ def make_shop_dispatcher(client_id: int):
 
         settings = await get_settings(client_id)
         site = settings.get("tracking_site", "track24")
+        api_key = settings.get("track17_api", "")
         base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
         track_url = base_url + track
 
-        await message.answer(
-            f"📦 <b>Заказ {order_id}</b>\n"
-            f"Трек-номер: <code>{track}</code>\n\n"
-            f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-            parse_mode="HTML",
-            reply_markup=main_menu_kb()
-        )
+        # Если есть AfterShip API — показываем статус
+        if api_key and site == "track24api":
+            msg = await message.answer("🔍 Запрашиваем статус посылки...")
+            events = await get_track24_api_status(track, api_key)
+            if events:
+                text = (
+                    f"📦 <b>Заказ {order_id}</b>\n"
+                    f"Трек-номер: <code>{track}</code>\n\n"
+                    f"<b>Последние события:</b>\n\n" +
+                    "\n\n".join(events) +
+                    f"\n\n<a href=\"{track_url}\">🔗 Подробнее</a>"
+                )
+                await msg.edit_text(text, parse_mode="HTML", reply_markup=main_menu_kb())
+            else:
+                await msg.edit_text(
+                    f"📦 <b>Заказ {order_id}</b>\n"
+                    f"Трек-номер: <code>{track}</code>\n\n"
+                    f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
+                    parse_mode="HTML", reply_markup=main_menu_kb()
+                )
+        else:
+            await message.answer(
+                f"📦 <b>Заказ {order_id}</b>\n"
+                f"Трек-номер: <code>{track}</code>\n\n"
+                f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
+                parse_mode="HTML",
+                reply_markup=main_menu_kb()
+            )
 
     @dp.message(F.text == "🤩 Оформить заказ")
     async def order_msg(message: Message):
