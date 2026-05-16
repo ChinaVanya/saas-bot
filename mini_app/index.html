@@ -568,6 +568,11 @@ function updatePreview() {
   if(!price&&!weight){document.getElementById('preview_result').innerHTML='';return;}
   const pr=price*rate;
   let html='';
+  if(tariffEnabled.normal){
+    const np=parseFloat(document.getElementById('normal_percent_display').value)/100||0.08;
+    const nk=parseFloat(document.getElementById('normal_per_kg').value)||200;
+    html+=`📦 Обычный: <b>${Math.round(pr+pr*np+weight*nk).toLocaleString()} ₽</b><br>`;
+  }
   if(tariffEnabled.truck){
     const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11;
     const tk=parseFloat(document.getElementById('truck_per_kg').value)||350;
@@ -581,12 +586,7 @@ function updatePreview() {
   if(tariffEnabled.express){
     const ep=parseFloat(document.getElementById('express_percent_display').value)/100||0.25;
     const ek=parseFloat(document.getElementById('express_per_kg').value)||1200;
-    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b><br>`;
-  }
-  if(tariffEnabled.normal){
-    const np=parseFloat(document.getElementById('normal_percent_display').value)/100||0.08;
-    const nk=parseFloat(document.getElementById('normal_per_kg').value)||200;
-    html+=`📦 Обычный: <b>${Math.round(pr+pr*np+weight*nk).toLocaleString()} ₽</b>`;
+    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b>`;
   }
   document.getElementById('preview_result').innerHTML=html||'<span style="color:var(--muted)">Все тарифы отключены</span>';
 }

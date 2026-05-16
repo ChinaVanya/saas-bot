@@ -1,7 +1,3 @@
-"""
-SHOP BOT - бот для покупателей магазина
-Читает все настройки из БД, запускает отдельного бота для каждого клиента
-"""
 import asyncio
 import sys
 import os
@@ -26,13 +22,13 @@ OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GPT_LIMIT = 5
 gpt_usage = {}
 
-
 TRACKING_URLS = {
     'track24':  'https://track24.ru/?code=',
     '17track':  'https://www.17track.net/ru/track?nums=',
     'pochta':   'https://www.pochta.ru/tracking#',
     'cainiao':  'https://global.cainiao.com/detail.htm?mailNoList=',
 }
+
 
 async def get_cny_rate() -> float:
     try:
@@ -47,18 +43,45 @@ async def get_cny_rate() -> float:
 async def calculate(price_cny, weight, settings) -> str:
     rate = await get_cny_rate()
     price_rub = price_cny * rate
-    truck_svc = price_rub * settings["truck_percent"] + weight * settings["truck_per_kg"]
-    air_svc   = price_rub * settings["air_percent"]   + weight * settings["air_per_kg"]
-    return (
+
+    lines = [
         f"📊 <b>Расчёт стоимости доставки</b>\n\n"
         f"💰 Цена товара: {price_cny} ¥ = {price_rub:.0f} ₽\n"
         f"⚖️ Вес: {weight} кг\n"
-        f"💱 Курс юаня: {rate} ₽\n\n"
-        f"🚛 <b>Авто (25-40 дней)</b>\n"
-        f"Услуги: {truck_svc:.0f} ₽ | Итого: <b>{price_rub+truck_svc:.0f} ₽</b>\n\n"
-        f"✈️ <b>Авиа (7-14 дней)</b>\n"
-        f"Услуги: {air_svc:.0f} ₽ | Итого: <b>{price_rub+air_svc:.0f} ₽</b>"
-    )
+        f"💱 Курс юаня: {rate} ₽\n"
+    ]
+
+    # Читаем какие тарифы включены
+    try:
+        enabled = json.loads(settings.get("tariff_enabled", "{}"))
+    except:
+        enabled = {}
+
+    if enabled.get("normal", True):
+        np_ = settings.get("normal_percent", 0.08)
+        nk_ = settings.get("normal_per_kg", 200)
+        svc = price_rub * np_ + weight * nk_
+        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+
+    if enabled.get("truck", True):
+        tp_ = settings.get("truck_percent", 0.11)
+        tk_ = settings.get("truck_per_kg", 350)
+        svc = price_rub * tp_ + weight * tk_
+        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+
+    if enabled.get("air", True):
+        ap_ = settings.get("air_percent", 0.17)
+        ak_ = settings.get("air_per_kg", 700)
+        svc = price_rub * ap_ + weight * ak_
+        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+
+    if enabled.get("express", True):
+        ep_ = settings.get("express_percent", 0.25)
+        ek_ = settings.get("express_per_kg", 1200)
+        svc = price_rub * ep_ + weight * ek_
+        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+
+    return "".join(lines)
 
 
 class CalcStates(StatesGroup):
@@ -78,9 +101,17 @@ def main_menu_kb():
     kb.button(text="🔎 Отследить посылку")
     kb.button(text="🤩 Оформить заказ")
     kb.button(text="📚 Ответы на вопросы")
-    kb.button(text="🎟 Промокод")
     kb.button(text="❓ Остались вопросы")
-    kb.adjust(2, 2, 2)
+    kb.adjust(2, 2, 1)
+    return kb.as_markup(resize_keyboard=True)
+
+
+def calc_menu_kb():
+    kb = ReplyKeyboardBuilder()
+    kb.button(text="💸 Рассчитать стоимость")
+    kb.button(text="🎟 У меня есть промокод")
+    kb.button(text="🏠 Главное меню")
+    kb.adjust(2, 1)
     return kb.as_markup(resize_keyboard=True)
 
 
@@ -98,17 +129,26 @@ def make_shop_dispatcher(client_id: int):
         await state.clear()
         settings = await get_settings(client_id)
         text    = settings.get("welcome_text", "Добро пожаловать! 👋")
-        manager = settings.get("manager_link", "@manager")
-        channel = settings.get("channel_link", "@channel")
-        await message.answer(
-            f"{text}\n\n📦 Оформление заказов: {manager}\n📢 Наш канал: {channel}",
-            reply_markup=main_menu_kb()
-        )
+        await message.answer(text, reply_markup=main_menu_kb())
 
+    # ── КАЛЬКУЛЯТОР — входное меню ──
     @dp.message(F.text == "💸 Калькулятор стоимости")
+    async def calc_main(message: Message, state: FSMContext):
+        await state.clear()
+        await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
+
+    @dp.message(F.text == "🏠 Главное меню")
+    async def go_home(message: Message, state: FSMContext):
+        await state.clear()
+        await message.answer("Главное меню:", reply_markup=main_menu_kb())
+
+    @dp.message(F.text == "💸 Рассчитать стоимость")
     async def calc_start(message: Message, state: FSMContext):
         await state.set_state(CalcStates.waiting_price)
-        await message.answer("Введите цену товара в ¥ или пришлите скриншот:", reply_markup=back_kb())
+        await message.answer(
+            "Введите цену товара в ¥ или пришлите скриншот:",
+            reply_markup=back_kb()
+        )
 
     @dp.message(CalcStates.waiting_price, F.photo)
     async def calc_photo(message: Message, state: FSMContext):
@@ -145,15 +185,19 @@ def make_shop_dispatcher(client_id: int):
             settings = await get_settings(client_id)
             result_text = await calculate(price, weight, settings)
             await state.clear()
-            await msg.edit_text(f"✅ <b>{name}</b>\n\n{result_text}", parse_mode="HTML", reply_markup=main_menu_kb())
+            await msg.edit_text(
+                f"✅ <b>{name}</b>\n\n{result_text}",
+                parse_mode="HTML",
+                reply_markup=calc_menu_kb()
+            )
         except Exception as e:
-            await msg.edit_text(f"❌ Ошибка. Введите цену вручную:")
+            await msg.edit_text("❌ Ошибка. Введите цену вручную:")
 
     @dp.message(CalcStates.waiting_price, F.text)
     async def calc_price(message: Message, state: FSMContext):
         if message.text == "◀️ Назад":
             await state.clear()
-            await message.answer("Главное меню:", reply_markup=main_menu_kb())
+            await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
             return
         try:
             price = float(message.text.replace(',', '.'))
@@ -175,11 +219,12 @@ def make_shop_dispatcher(client_id: int):
             settings = await get_settings(client_id)
             result = await calculate(data["price"], weight, settings)
             await state.clear()
-            await message.answer(result, parse_mode="HTML", reply_markup=main_menu_kb())
+            await message.answer(result, parse_mode="HTML", reply_markup=calc_menu_kb())
         except ValueError:
             await message.answer("Введите число, например: 1.5")
 
-    @dp.message(F.text == "🎟 Промокод")
+    # ── ПРОМОКОД ──
+    @dp.message(F.text == "🎟 У меня есть промокод")
     async def promo_start(message: Message, state: FSMContext):
         await state.set_state(PromoStates.waiting_promo)
         await message.answer("Введите промокод:", reply_markup=back_kb())
@@ -188,15 +233,20 @@ def make_shop_dispatcher(client_id: int):
     async def promo_check(message: Message, state: FSMContext):
         if message.text == "◀️ Назад":
             await state.clear()
-            await message.answer("Главное меню:", reply_markup=main_menu_kb())
+            await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
             return
         discount = await check_promo(client_id, message.text.strip())
         await state.clear()
         if discount:
-            await message.answer(f"✅ Промокод активирован! Скидка: <b>{discount}%</b>", parse_mode="HTML", reply_markup=main_menu_kb())
+            await message.answer(
+                f"✅ Промокод активирован! Скидка: <b>{discount}%</b>",
+                parse_mode="HTML",
+                reply_markup=calc_menu_kb()
+            )
         else:
-            await message.answer("❌ Промокод не найден.", reply_markup=main_menu_kb())
+            await message.answer("❌ Промокод не найден.", reply_markup=calc_menu_kb())
 
+    # ── ОТСЛЕЖИВАНИЕ ──
     @dp.message(F.text == "🔎 Отследить посылку")
     async def track_start(message: Message, state: FSMContext):
         await state.set_state(TrackStates.waiting_order)
@@ -226,18 +276,21 @@ def make_shop_dispatcher(client_id: int):
         else:
             await message.answer("❌ Заказ не найден. Обратитесь к менеджеру.", reply_markup=main_menu_kb())
 
+    # ── ЗАКАЗ ──
     @dp.message(F.text == "🤩 Оформить заказ")
     async def order_msg(message: Message):
         settings = await get_settings(client_id)
         manager = settings.get("manager_link", "@manager")
         await message.answer(f"Оформить заказ: {manager} 👈\n\nОтправь скриншот товара или ссылку.")
 
+    # ── ПОДДЕРЖКА ──
     @dp.message(F.text == "❓ Остались вопросы")
     async def support_msg(message: Message):
         settings = await get_settings(client_id)
         manager = settings.get("manager_link", "@manager")
         await message.answer(f"Напиши менеджеру: {manager}")
 
+    # ── FAQ ──
     @dp.message(F.text == "📚 Ответы на вопросы")
     async def faq_msg(message: Message):
         settings = await get_settings(client_id)
@@ -261,7 +314,10 @@ def make_shop_dispatcher(client_id: int):
             faq = json.loads(settings.get("faq_json", "[]"))
             idx = int(callback.data.split("_")[1])
             item = faq[idx]
-            await callback.message.answer(f"❓ <b>{item['question']}</b>\n\n{item['answer']}", parse_mode="HTML")
+            await callback.message.answer(
+                f"❓ <b>{item['question']}</b>\n\n{item['answer']}",
+                parse_mode="HTML"
+            )
         except:
             await callback.message.answer("Ошибка загрузки FAQ.")
         await callback.answer()
@@ -284,14 +340,18 @@ async def main():
         conn = await get_conn()
         row = await conn.fetchrow("SELECT bot_token FROM clients WHERE id=$1", client["id"])
         await conn.close()
-        if not row:
+        if not row or row["bot_token"].startswith("pending_"):
             continue
         bot = Bot(token=row["bot_token"])
         dp = make_shop_dispatcher(client["id"])
         tasks.append(dp.start_polling(bot))
         print(f"🛍 Запущен бот: {client['bot_name']}")
 
-    print(f"✅ Запущено {len(tasks)} ботов магазинов")
+    if not tasks:
+        print("⚠️ Нет ботов с токенами.")
+        return
+
+    print(f"✅ Запущено {len(tasks)} ботов")
     await asyncio.gather(*tasks)
 
 
