@@ -40,7 +40,10 @@ async def init_db():
             manager_link  TEXT DEFAULT '@manager',
             channel_link  TEXT DEFAULT '@channel',
             welcome_text  TEXT DEFAULT 'Добро пожаловать! 👋',
-            faq_json      TEXT DEFAULT '[]'
+            faq_json          TEXT DEFAULT '[]',
+            express_percent   REAL DEFAULT 0.25,
+            express_per_kg    REAL DEFAULT 1200,
+            tariff_enabled    TEXT DEFAULT '{"air":true,"truck":true,"express":true}'
         )
     """)
 

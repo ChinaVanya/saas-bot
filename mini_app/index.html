@@ -20,6 +20,7 @@
   .login-logo { font-size:48px; margin-bottom:20px; }
   .login-title { font-size:24px; font-weight:800; margin-bottom:8px; text-align:center; }
   .login-subtitle { font-size:14px; color:var(--muted); margin-bottom:32px; text-align:center; line-height:1.5; }
+  .login-hint { font-size:12px; color:var(--muted); text-align:left; width:100%; margin-bottom:6px; padding-left:4px; }
   .login-input { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; color:var(--text); font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; letter-spacing:1px; text-align:center; outline:none; margin-bottom:12px; text-transform:uppercase; transition:border-color .2s; }
   .login-input.token-input { text-transform:none; font-size:13px; letter-spacing:0; font-weight:500; }
   .login-input:focus { border-color:var(--accent); }
@@ -28,7 +29,14 @@
   .login-btn:active { transform:scale(.97); }
   .login-btn:disabled { opacity:.5; cursor:not-allowed; }
   .login-error { margin-top:12px; color:var(--red); font-size:13px; font-weight:600; text-align:center; min-height:20px; }
-  .login-hint { font-size:12px; color:var(--muted); text-align:left; width:100%; margin-bottom:6px; padding-left:4px; }
+
+  /* Checkbox */
+  .remember-row { display:flex; align-items:center; gap:10px; margin-top:16px; cursor:pointer; width:100%; }
+  .remember-row input[type=checkbox] { display:none; }
+  .custom-checkbox { width:20px; height:20px; border-radius:6px; border:2px solid var(--border); background:var(--surface2); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  .custom-checkbox.checked { background:var(--accent); border-color:var(--accent); }
+  .custom-checkbox.checked::after { content:'✓'; color:#fff; font-size:12px; font-weight:800; }
+  .remember-label { font-size:13px; color:var(--muted); }
 
   /* MAIN */
   .main-screen { display:none; padding-bottom:80px; }
@@ -38,9 +46,9 @@
   .logo span { color:var(--accent2); }
   .bot-status { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
   .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
-  .status-dot.inactive { background:var(--red); box-shadow:0 0 8px var(--red); }
 
-  .tabs { display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:16px 20px 0; overflow-x:auto; }
+  .tabs { display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:16px 20px 0; overflow-x:auto; scrollbar-width:none; }
+  .tabs::-webkit-scrollbar { display:none; }
   .tab { flex:1; min-width:fit-content; padding:8px 6px; border:none; border-radius:9px; background:transparent; color:var(--muted); font-family:'Manrope',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
   .tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 12px rgba(108,99,255,.4); }
 
@@ -55,14 +63,21 @@
   .field input, .field textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; outline:none; resize:none; transition:border-color .2s; }
   .field input:focus, .field textarea:focus { border-color:var(--accent); }
 
-  .tariff-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .tariff-block { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px; }
-  .tariff-block .type { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; margin-bottom:10px; letter-spacing:.5px; }
-  .tariff-block.air .type { color:#60a5fa; }
-  .tariff-block.truck .type { color:#fb923c; }
-  .tariff-block input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; font-weight:600; outline:none; margin-bottom:8px; transition:border-color .2s; }
-  .tariff-block input:focus { border-color:var(--accent); }
-  .tariff-block small { display:block; font-size:10px; color:var(--muted); margin-top:-4px; margin-bottom:8px; }
+  /* ТАРИФЫ */
+  .tariff-block { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; transition:all .3s; }
+  .tariff-block.disabled { opacity:.35; filter:grayscale(1); }
+  .tariff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .tariff-type { font-size:13px; font-weight:700; letter-spacing:.5px; }
+  .tariff-type.air { color:#60a5fa; }
+  .tariff-type.truck { color:#fb923c; }
+  .tariff-type.express { color:#a78bfa; }
+  .tariff-toggle { width:28px; height:28px; border-radius:8px; border:none; cursor:pointer; font-size:16px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+  .tariff-toggle.active { background:rgba(239,68,68,.15); color:var(--red); }
+  .tariff-toggle.inactive { background:rgba(34,197,94,.15); color:var(--green); }
+  .tariff-inputs { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .tariff-field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; font-weight:600; outline:none; margin-bottom:4px; transition:border-color .2s; }
+  .tariff-field input:focus { border-color:var(--accent); }
+  .tariff-field small { display:block; font-size:10px; color:var(--muted); }
 
   .btn { width:100%; padding:13px; border:none; border-radius:10px; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
   .btn-primary { background:var(--accent); color:#fff; box-shadow:0 4px 16px rgba(108,99,255,.35); }
@@ -72,8 +87,8 @@
   .btn-sm { width:auto; padding:8px 14px; font-size:13px; border-radius:8px; }
   .btn-danger { background:rgba(239,68,68,.15); color:var(--red); border:1px solid rgba(239,68,68,.3); }
   .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-
-  .apply-banner { background:linear-gradient(135deg,rgba(34,197,94,.1),rgba(34,197,94,.05)); border:1px solid rgba(34,197,94,.3); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:var(--green); display:flex; align-items:center; gap:8px; }
+  .btn-suggest { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Manrope',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; text-align:left; width:100%; margin-bottom:8px; }
+  .btn-suggest:active { background:var(--accent); color:#fff; border-color:var(--accent); }
 
   .promo-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
   .promo-code { font-size:14px; font-weight:700; letter-spacing:.5px; }
@@ -113,7 +128,7 @@
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🤖</div>
   <div class="login-title">Панель управления</div>
-  <div class="login-subtitle">Введите код доступа и токен вашего бота чтобы начать настройку</div>
+  <div class="login-subtitle">Введите код доступа и токен вашего бота</div>
 
   <div class="login-hint">Код доступа</div>
   <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
@@ -122,6 +137,12 @@
   <input class="login-input token-input" id="tokenInput" type="text" placeholder="123456789:ABC-DEF...">
 
   <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти в панель</button>
+
+  <div class="remember-row" onclick="toggleRemember()">
+    <div class="custom-checkbox" id="rememberBox"></div>
+    <span class="remember-label">Запомнить меня на 7 дней</span>
+  </div>
+
   <div class="login-error" id="loginError"></div>
 </div>
 
@@ -151,54 +172,93 @@
     <div class="bot-info-card">
       <div class="bot-info-title" id="botName">Мой магазин</div>
       <div class="bot-info-sub">Токен бота привязан и активен</div>
-      <div style="font-size:12px; color:var(--muted); margin-bottom:10px;">Хотите сменить бота? Введите новый токен:</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">Хотите сменить бота? Введите новый токен:</div>
       <input class="bot-token-input" id="newTokenInput" placeholder="Новый токен от @BotFather">
       <button class="btn btn-primary" onclick="updateToken()">Обновить токен бота</button>
     </div>
-    <div class="apply-banner">
-      🚀 После каждого изменения нажимайте кнопку <b>"Применить к боту"</b> в соответствующей секции
-    </div>
+
     <div class="card">
       <div class="card-title">Инструкция</div>
-      <div style="font-size:13px; line-height:1.8; color:var(--muted);">
+      <div style="font-size:13px;line-height:2;color:var(--muted);">
         1. Создайте бота в <b style="color:var(--text)">@BotFather</b> → /newbot<br>
         2. Скопируйте токен и вставьте выше<br>
         3. Настройте тарифы, FAQ и контакты<br>
-        4. Нажмите <b style="color:var(--green)">"Применить к боту"</b> в каждой секции<br>
+        4. Нажмите <b style="color:var(--green)">"Применить к боту"</b><br>
         5. Ваш бот начнёт работать! 🎉
       </div>
     </div>
+
+    <button class="btn btn-apply" onclick="applyToBot()">🚀 Применить к боту</button>
   </div>
 
   <!-- ТАРИФЫ -->
   <div class="page" id="page-tariffs">
     <div class="card">
-      <div class="card-title">Стоимость доставки</div>
-      <div class="tariff-grid">
-        <div class="tariff-block air">
-          <div class="type">✈️ Авиа</div>
-          <input type="number" id="air_percent_display" placeholder="17" step="0.1" oninput="updatePreview()">
-          <small>Комиссия %</small>
-          <input type="number" id="air_per_kg" placeholder="700" step="10" oninput="updatePreview()">
-          <small>₽ за кг</small>
+      <div class="card-title">Варианты доставки</div>
+
+      <!-- АВИА -->
+      <div class="tariff-block" id="block-air">
+        <div class="tariff-header">
+          <span class="tariff-type air">✈️ Авиа</span>
+          <button class="tariff-toggle active" id="toggle-air" onclick="toggleTariff('air')">−</button>
         </div>
-        <div class="tariff-block truck">
-          <div class="type">🚛 Авто</div>
-          <input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()">
-          <small>Комиссия %</small>
-          <input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()">
-          <small>₽ за кг</small>
+        <div class="tariff-inputs">
+          <div class="tariff-field">
+            <input type="number" id="air_percent_display" placeholder="17" step="0.1" oninput="updatePreview()">
+            <small>Комиссия %</small>
+          </div>
+          <div class="tariff-field">
+            <input type="number" id="air_per_kg" placeholder="700" step="10" oninput="updatePreview()">
+            <small>₽ за кг</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- АВТО -->
+      <div class="tariff-block" id="block-truck">
+        <div class="tariff-header">
+          <span class="tariff-type truck">🚛 Авто</span>
+          <button class="tariff-toggle active" id="toggle-truck" onclick="toggleTariff('truck')">−</button>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field">
+            <input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()">
+            <small>Комиссия %</small>
+          </div>
+          <div class="tariff-field">
+            <input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()">
+            <small>₽ за кг</small>
+          </div>
+        </div>
+      </div>
+
+      <!-- ЭКСПРЕСС -->
+      <div class="tariff-block" id="block-express">
+        <div class="tariff-header">
+          <span class="tariff-type express">⚡ Экспресс</span>
+          <button class="tariff-toggle active" id="toggle-express" onclick="toggleTariff('express')">−</button>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field">
+            <input type="number" id="express_percent_display" placeholder="25" step="0.1" oninput="updatePreview()">
+            <small>Комиссия %</small>
+          </div>
+          <div class="tariff-field">
+            <input type="number" id="express_per_kg" placeholder="1200" step="10" oninput="updatePreview()">
+            <small>₽ за кг</small>
+          </div>
         </div>
       </div>
     </div>
+
     <div class="card">
       <div class="card-title">Предпросмотр</div>
       <div class="field"><label>Цена товара (¥)</label><input type="number" id="preview_price" placeholder="500" oninput="updatePreview()"></div>
       <div class="field"><label>Вес (кг)</label><input type="number" id="preview_weight" placeholder="1.5" step="0.1" oninput="updatePreview()"></div>
-      <div id="preview_result" style="font-size:13px;color:var(--muted);line-height:1.8;"></div>
+      <div id="preview_result" style="font-size:13px;color:var(--muted);line-height:1.9;"></div>
     </div>
+
     <button class="btn btn-primary" onclick="saveTariffs()">Сохранить тарифы</button>
-    <button class="btn btn-apply" onclick="applyToBot('tariffs')">🚀 Применить к боту</button>
   </div>
 
   <!-- ПРОМОКОДЫ -->
@@ -216,7 +276,6 @@
       <div class="card-title">Активные промокоды</div>
       <div id="promos-list"></div>
     </div>
-    <button class="btn btn-apply" onclick="applyToBot('promos')">🚀 Применить к боту</button>
   </div>
 
   <!-- ТРЕКИ -->
@@ -231,7 +290,6 @@
       <div class="card-title">Все заказы</div>
       <div id="tracks-list"></div>
     </div>
-    <button class="btn btn-apply" onclick="applyToBot('tracks')">🚀 Применить к боту</button>
   </div>
 
   <!-- FAQ -->
@@ -239,10 +297,19 @@
     <div class="card">
       <div class="card-title">Вопросы и ответы</div>
       <div id="faq-list"></div>
-      <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:4px">+ Добавить вопрос</button>
+      <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:8px">+ Добавить вопрос</button>
     </div>
+
+    <div class="card">
+      <div class="card-title">Предлагаемые вопросы</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Нажмите чтобы добавить в список</div>
+      <button class="btn-suggest" onclick="addSuggestedFaq('Как скачать приложение?', 'Для оформления заказа приложение не требуется. Просто напишите нам в бот или менеджеру.')">➕ Как скачать приложение?</button>
+      <button class="btn-suggest" onclick="addSuggestedFaq('Как оформить заказ?', 'Отправьте менеджеру ссылку на товар или скриншот, укажите размер и количество. Менеджер рассчитает стоимость и оформит заказ.')">➕ Как оформить заказ?</button>
+      <button class="btn-suggest" onclick="addSuggestedFaq('Доставка и комиссия', 'Мы предлагаем несколько вариантов доставки. Используйте калькулятор в боте чтобы рассчитать точную стоимость для вашего товара.')">➕ Доставка и комиссия</button>
+      <button class="btn-suggest" onclick="addSuggestedFaq('Экспресс доставка', 'Экспресс доставка занимает 5-7 дней. Стоимость выше стандартной, но товар придёт значительно быстрее.')">➕ Экспресс доставка</button>
+    </div>
+
     <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
-    <button class="btn btn-apply" onclick="applyToBot('faq')">🚀 Применить к боту</button>
   </div>
 
   <!-- ОБЩЕЕ -->
@@ -257,7 +324,6 @@
       <div class="field"><textarea id="welcome_text" rows="4" placeholder="Добро пожаловать!"></textarea></div>
     </div>
     <button class="btn btn-primary" onclick="saveGeneral()">Сохранить</button>
-    <button class="btn btn-apply" onclick="applyToBot('general')">🚀 Применить к боту</button>
   </div>
 </div>
 
@@ -268,12 +334,58 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const INIT_DATA = tg.initData || 'dev';
 const API = '';
+const TG_USERNAME = tg.initDataUnsafe?.user?.username || '';
+const REMEMBER_KEY = `botpanel_session_${TG_USERNAME}`;
+
 let CLIENT_ID = null;
 let settings = {};
 let promos = [];
 let tracks = [];
 let faqItems = [];
+let rememberMe = false;
 
+// Состояние тарифов (true = включён)
+let tariffEnabled = { air: true, truck: true, express: true };
+
+// ── Запомнить ──
+function toggleRemember() {
+  rememberMe = !rememberMe;
+  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
+}
+
+function saveSession(clientId, code, token, botName) {
+  if (!rememberMe) return;
+  const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  localStorage.setItem(REMEMBER_KEY, JSON.stringify({ clientId, code, token, botName, expires }));
+}
+
+function loadSession() {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (Date.now() > data.expires) { localStorage.removeItem(REMEMBER_KEY); return null; }
+    return data;
+  } catch { return null; }
+}
+
+// ── Автовход ──
+window.addEventListener('DOMContentLoaded', async () => {
+  const session = loadSession();
+  if (session) {
+    CLIENT_ID = session.clientId;
+    document.getElementById('botName').textContent = session.botName || 'Мой магазин';
+    try {
+      await loadAll();
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+    } catch {
+      localStorage.removeItem(REMEMBER_KEY);
+    }
+  }
+});
+
+// ── Вход ──
 document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
 document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
@@ -284,15 +396,13 @@ async function doLogin() {
 
   const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginError');
-  btn.disabled = true;
-  btn.textContent = 'Проверяем...';
-  err.textContent = '';
+  btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
 
   try {
     const r = await fetch(`${API}/api/auth`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA },
-      body: JSON.stringify({ code, username: tg.initDataUnsafe?.user?.username || '', token })
+      body: JSON.stringify({ code, username: TG_USERNAME, token })
     });
     const data = await r.json();
     if (!r.ok || !data.client_id) {
@@ -302,7 +412,9 @@ async function doLogin() {
       return;
     }
     CLIENT_ID = data.client_id;
-    document.getElementById('botName').textContent = data.bot_name || 'Мой магазин';
+    const botName = data.bot_name || 'Мой магазин';
+    document.getElementById('botName').textContent = botName;
+    saveSession(CLIENT_ID, code, token, botName);
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
@@ -313,6 +425,7 @@ async function doLogin() {
   }
 }
 
+// ── Табы ──
 function switchTab(name) {
   const pages = ['bot','tariffs','promos','tracks','faq','general'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
@@ -320,6 +433,7 @@ function switchTab(name) {
   document.getElementById('page-'+name).classList.add('active');
 }
 
+// ── Toast ──
 function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
   t.textContent = (type==='ok'?'✅ ':'❌ ') + msg;
@@ -327,6 +441,7 @@ function showToast(msg, type='ok') {
   setTimeout(() => t.className='toast', 2500);
 }
 
+// ── API ──
 async function apiGet(path) {
   const r = await fetch(`${API}/api/${path}`, { headers:{'x-init-data':INIT_DATA} });
   if(!r.ok) throw new Error(await r.text());
@@ -343,6 +458,7 @@ async function apiDelete(path, body) {
   return r.json();
 }
 
+// ── Загрузка ──
 async function loadAll() {
   const [s, p, tr] = await Promise.all([
     apiGet(`settings/${CLIENT_ID}`),
@@ -360,24 +476,64 @@ function fillSettings() {
   document.getElementById('air_per_kg').value = settings.air_per_kg;
   document.getElementById('truck_percent_display').value = (settings.truck_percent*100).toFixed(1);
   document.getElementById('truck_per_kg').value = settings.truck_per_kg;
+  document.getElementById('express_percent_display').value = settings.express_percent ? (settings.express_percent*100).toFixed(1) : '25';
+  document.getElementById('express_per_kg').value = settings.express_per_kg || '1200';
   document.getElementById('manager_link').value = settings.manager_link||'';
   document.getElementById('channel_link').value = settings.channel_link||'';
   document.getElementById('welcome_text').value = settings.welcome_text||'';
+
+  // Загружаем состояние тарифов
+  try {
+    const saved = JSON.parse(settings.tariff_enabled||'{}');
+    tariffEnabled = { air: saved.air!==false, truck: saved.truck!==false, express: saved.express!==false };
+  } catch { tariffEnabled = { air:true, truck:true, express:true }; }
+  ['air','truck','express'].forEach(t => updateTariffUI(t));
+}
+
+// ── Тарифы ──
+function toggleTariff(type) {
+  tariffEnabled[type] = !tariffEnabled[type];
+  updateTariffUI(type);
+  tg.HapticFeedback.impactOccurred('light');
+}
+
+function updateTariffUI(type) {
+  const block = document.getElementById('block-'+type);
+  const btn = document.getElementById('toggle-'+type);
+  if (tariffEnabled[type]) {
+    block.classList.remove('disabled');
+    btn.textContent = '−';
+    btn.className = 'tariff-toggle active';
+  } else {
+    block.classList.add('disabled');
+    btn.textContent = '+';
+    btn.className = 'tariff-toggle inactive';
+  }
 }
 
 function updatePreview() {
   const price=parseFloat(document.getElementById('preview_price').value)||0;
   const weight=parseFloat(document.getElementById('preview_weight').value)||0;
   const rate=13;
-  const ap=parseFloat(document.getElementById('air_percent_display').value)/100||0.17;
-  const ak=parseFloat(document.getElementById('air_per_kg').value)||700;
-  const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11;
-  const tk=parseFloat(document.getElementById('truck_per_kg').value)||350;
   if(!price&&!weight){document.getElementById('preview_result').innerHTML='';return;}
   const pr=price*rate;
-  document.getElementById('preview_result').innerHTML=
-    `🚛 Авто: <b>${Math.round(pr+pr*tp+weight*tk).toLocaleString()} ₽</b><br>`+
-    `✈️ Авиа: <b>${Math.round(pr+pr*ap+weight*ak).toLocaleString()} ₽</b>`;
+  let html='';
+  if(tariffEnabled.truck){
+    const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11;
+    const tk=parseFloat(document.getElementById('truck_per_kg').value)||350;
+    html+=`🚛 Авто: <b>${Math.round(pr+pr*tp+weight*tk).toLocaleString()} ₽</b><br>`;
+  }
+  if(tariffEnabled.air){
+    const ap=parseFloat(document.getElementById('air_percent_display').value)/100||0.17;
+    const ak=parseFloat(document.getElementById('air_per_kg').value)||700;
+    html+=`✈️ Авиа: <b>${Math.round(pr+pr*ap+weight*ak).toLocaleString()} ₽</b><br>`;
+  }
+  if(tariffEnabled.express){
+    const ep=parseFloat(document.getElementById('express_percent_display').value)/100||0.25;
+    const ek=parseFloat(document.getElementById('express_per_kg').value)||1200;
+    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b>`;
+  }
+  document.getElementById('preview_result').innerHTML=html||'<span style="color:var(--muted)">Все тарифы отключены</span>';
 }
 
 async function saveTariffs() {
@@ -387,31 +543,40 @@ async function saveTariffs() {
       air_per_kg: parseFloat(document.getElementById('air_per_kg').value),
       truck_percent: parseFloat(document.getElementById('truck_percent_display').value)/100,
       truck_per_kg: parseFloat(document.getElementById('truck_per_kg').value),
+      express_percent: parseFloat(document.getElementById('express_percent_display').value)/100,
+      express_per_kg: parseFloat(document.getElementById('express_per_kg').value),
+      tariff_enabled: JSON.stringify(tariffEnabled),
     });
     showToast('Тарифы сохранены!');
     tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка','err'); }
 }
 
-async function applyToBot(section) {
+// ── Применить к боту ──
+async function applyToBot() {
   try {
-    await apiPost(`apply/${CLIENT_ID}`, { section });
+    await saveTariffs();
+    await saveGeneral();
+    await saveFaq();
+    await apiPost(`apply/${CLIENT_ID}`, { section: 'all' });
     showToast('Применено к боту! 🚀');
     tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка применения','err'); }
 }
 
+// ── Обновить токен ──
 async function updateToken() {
   const token = document.getElementById('newTokenInput').value.trim();
-  if(!token || !token.includes(':')) return showToast('Введите корректный токен','err');
+  if(!token||!token.includes(':')) return showToast('Введите корректный токен','err');
   try {
-    await apiPost(`token/${CLIENT_ID}`, { token });
-    showToast('Токен обновлён! Бот перезапускается...');
+    await apiPost(`token/${CLIENT_ID}`,{token});
+    showToast('Токен обновлён!');
     document.getElementById('newTokenInput').value='';
     tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка','err'); }
 }
 
+// ── Промокоды ──
 function renderPromos() {
   const el=document.getElementById('promos-list');
   if(!promos.length){el.innerHTML='<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>';return;}
@@ -422,7 +587,6 @@ function renderPromos() {
       <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div>
     </div>`).join('');
 }
-
 async function addPromo() {
   const code=document.getElementById('new_promo_code').value.trim().toUpperCase();
   const discount=parseInt(document.getElementById('new_promo_discount').value);
@@ -436,7 +600,6 @@ async function addPromo() {
     tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка','err'); }
 }
-
 async function deletePromo(code) {
   try {
     await apiDelete(`promos/${CLIENT_ID}`,{code});
@@ -445,6 +608,7 @@ async function deletePromo(code) {
   } catch { showToast('Ошибка','err'); }
 }
 
+// ── Треки ──
 function renderTracks() {
   const el=document.getElementById('tracks-list');
   if(!tracks.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';return;}
@@ -454,7 +618,6 @@ function renderTracks() {
       <div class="track-num">${t.track_num}</div>
     </div>`).join('');
 }
-
 async function addTrack() {
   const order_id=document.getElementById('new_order_id').value.trim();
   const track_num=document.getElementById('new_track_num').value.trim();
@@ -469,6 +632,7 @@ async function addTrack() {
   } catch { showToast('Ошибка','err'); }
 }
 
+// ── FAQ ──
 function renderFaqItems() {
   const el=document.getElementById('faq-list');
   if(!faqItems.length){el.innerHTML='<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>';return;}
@@ -480,10 +644,13 @@ function renderFaqItems() {
       <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
     </div>`).join('');
 }
-
 function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); }
 function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); }
-
+function addSuggestedFaq(question, answer) {
+  faqItems.push({question, answer}); renderFaqItems();
+  showToast('Вопрос добавлен!');
+  tg.HapticFeedback.impactOccurred('light');
+}
 async function saveFaq() {
   try {
     await apiPost(`faq/${CLIENT_ID}`,faqItems);
@@ -492,6 +659,7 @@ async function saveFaq() {
   } catch { showToast('Ошибка','err'); }
 }
 
+// ── Общее ──
 async function saveGeneral() {
   try {
     await apiPost(`settings/${CLIENT_ID}`,{
