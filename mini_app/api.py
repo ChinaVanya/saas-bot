@@ -29,14 +29,37 @@ app.mount("/app", StaticFiles(directory="mini_app", html=True), name="mini_app")
 
 
 class SettingsUpdate(BaseModel):
-    air_percent:   Optional[float] = None
-    air_per_kg:    Optional[float] = None
-    truck_percent: Optional[float] = None
-    truck_per_kg:  Optional[float] = None
-    manager_link:  Optional[str]   = None
-    channel_link:  Optional[str]   = None
-    welcome_text:  Optional[str]   = None
-    faq_json:      Optional[str]   = None
+    # Тарифы
+    air_percent:    Optional[float] = None
+    air_per_kg:     Optional[float] = None
+    truck_percent:  Optional[float] = None
+    truck_per_kg:   Optional[float] = None
+    express_percent: Optional[float] = None
+    express_per_kg:  Optional[float] = None
+    normal_percent:  Optional[float] = None
+    normal_per_kg:   Optional[float] = None
+    tariff_enabled:  Optional[str]   = None
+    # Контакты
+    manager_link:   Optional[str]   = None
+    channel_link:   Optional[str]   = None
+    # Тексты
+    welcome_text:   Optional[str]   = None
+    faq_json:       Optional[str]   = None
+    # Новые поля
+    currency:       Optional[str]   = None
+    tracking_site:  Optional[str]   = None
+    track17_api:    Optional[str]   = None
+    openai_api:     Optional[str]   = None
+    ai_recognition: Optional[int]   = None
+    msg_welcome:    Optional[str]   = None
+    msg_calc:       Optional[str]   = None
+    msg_order:      Optional[str]   = None
+    msg_support:    Optional[str]   = None
+    msg_welcome_img: Optional[str]  = None
+    msg_calc_img:   Optional[str]   = None
+    msg_order_img:  Optional[str]   = None
+    msg_support_img: Optional[str]  = None
+
 
 class PromoAdd(BaseModel):
     code:     str
@@ -70,7 +93,6 @@ async def api_auth(body: AuthRequest):
     client = await get_client_by_code_and_username(body.code, body.username)
     if not client:
         raise HTTPException(status_code=401, detail="Неверный код или аккаунт не совпадает")
-    # Сохраняем токен бота
     if body.token and ":" in body.token:
         await update_bot_token(client["id"], body.token)
     return {"client_id": client["id"], "bot_name": client["bot_name"]}
@@ -86,9 +108,7 @@ async def api_update_token(client_id: int, body: TokenUpdate, x_init_data: str =
 
 @app.post("/api/apply/{client_id}")
 async def api_apply(client_id: int, body: ApplyRequest, x_init_data: str = Header(...)):
-    # Здесь просто подтверждаем — saas-bot сам читает из БД
-    # В будущем можно добавить перезапуск конкретного бота
-    return {"ok": True, "message": f"Настройки секции '{body.section}' применены"}
+    return {"ok": True}
 
 
 @app.get("/api/settings/{client_id}")

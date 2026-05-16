@@ -7,26 +7,37 @@ import base64
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
 from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, InputMediaPhoto, BufferedInputFile
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
-from database.db import init_db, get_all_clients, get_settings, check_promo, get_track
+from database.db import init_db, get_all_clients, get_settings, check_promo, get_track, get_conn
 
 import aiohttp
-
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
-GPT_LIMIT = 5
-gpt_usage = {}
 
 TRACKING_URLS = {
     'track24':  'https://track24.ru/?code=',
     '17track':  'https://www.17track.net/ru/track?nums=',
-    'pochta':   'https://www.pochta.ru/tracking#',
-    'cainiao':  'https://global.cainiao.com/detail.htm?mailNoList=',
+}
+
+# Статусы 17track на русском
+TRACK17_STATUSES = {
+    0:   "Не найден",
+    10:  "В ожидании",
+    20:  "Информация получена",
+    30:  "В пути",
+    35:  "Прибыл в страну назначения",
+    40:  "На доставке",
+    41:  "Попытка доставки",
+    42:  "Забрать в отделении",
+    50:  "Доставлен",
+    60:  "Возврат",
+    65:  "Возврат завершён",
+    70:  "Утерян",
+    80:  "Таможня",
 }
 
 
@@ -40,48 +51,135 @@ async def get_cny_rate() -> float:
         return 13.0
 
 
+async def get_track17_status(track_num: str, api_key: str) -> dict:
+    """Запрашивает статус посылки через 17track API."""
+    try:
+        async with aiohttp.ClientSession() as session:
+            # Регистрируем трек
+            await session.post(
+                "https://api.17track.net/track/v2.2/register",
+                headers={"17token": api_key, "Content-Type": "application/json"},
+                json=[{"number": track_num}]
+            )
+            # Получаем статус
+            async with session.post(
+                "https://api.17track.net/track/v2.2/gettrackinfo",
+                headers={"17token": api_key, "Content-Type": "application/json"},
+                json=[{"number": track_num}]
+            ) as resp:
+                data = await resp.json()
+                if data.get("code") != 0:
+                    return None
+                track_data = data.get("data", {}).get("accepted", [])
+                if not track_data:
+                    return None
+                info = track_data[0].get("track", {})
+                status_code = info.get("e", 0)
+                status_text = TRACK17_STATUSES.get(status_code, "Неизвестно")
+                last_event = ""
+                events = info.get("z0", []) or info.get("z1", [])
+                if events:
+                    last = events[0]
+                    last_event = last.get("z", "")
+                return {
+                    "status": status_text,
+                    "last_event": last_event,
+                    "status_code": status_code
+                }
+    except Exception as e:
+        print(f"17track error: {e}")
+        return None
+
+
 async def calculate(price_cny, weight, settings) -> str:
     rate = await get_cny_rate()
     price_rub = price_cny * rate
 
-    lines = [
-        f"📊 <b>Расчёт стоимости доставки</b>\n\n"
-        f"💰 Цена товара: {price_cny} ¥ = {price_rub:.0f} ₽\n"
-        f"⚖️ Вес: {weight} кг\n"
-        f"💱 Курс юаня: {rate} ₽\n"
-    ]
+    currency = settings.get("currency", "RUB")
+    sym = {"RUB": "₽", "USD": "$", "KZT": "₸"}.get(currency, "₽")
 
-    # Читаем какие тарифы включены
+    # Конвертируем если нужно
+    if currency == "USD":
+        usd_rate = await get_usd_rate()
+        price_display = price_rub / usd_rate
+    elif currency == "KZT":
+        kzt_rate = await get_kzt_rate()
+        price_display = price_rub * kzt_rate
+    else:
+        price_display = price_rub
+
     try:
         enabled = json.loads(settings.get("tariff_enabled", "{}"))
     except:
         enabled = {}
 
+    lines = [
+        f"📊 <b>Расчёт стоимости доставки</b>\n\n"
+        f"💰 Цена товара: {price_cny} ¥ = {price_display:.0f} {sym}\n"
+        f"⚖️ Вес: {weight} кг\n"
+        f"💱 Курс юаня: {rate} ₽\n"
+    ]
+
+    def calc_tariff(percent, per_kg):
+        svc = price_rub * percent + weight * per_kg
+        total = price_rub + svc
+        if currency == "USD":
+            svc = svc / usd_rate if 'usd_rate' in dir() else svc / 90
+            total = total / usd_rate if 'usd_rate' in dir() else total / 90
+        elif currency == "KZT":
+            svc = svc * kzt_rate if 'kzt_rate' in dir() else svc * 5.5
+            total = total * kzt_rate if 'kzt_rate' in dir() else total * 5.5
+        return svc, total
+
     if enabled.get("normal", True):
         np_ = settings.get("normal_percent", 0.08)
         nk_ = settings.get("normal_per_kg", 200)
         svc = price_rub * np_ + weight * nk_
-        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+        total = price_rub + svc
+        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
 
     if enabled.get("truck", True):
         tp_ = settings.get("truck_percent", 0.11)
         tk_ = settings.get("truck_per_kg", 350)
         svc = price_rub * tp_ + weight * tk_
-        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+        total = price_rub + svc
+        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
 
     if enabled.get("air", True):
         ap_ = settings.get("air_percent", 0.17)
         ak_ = settings.get("air_per_kg", 700)
         svc = price_rub * ap_ + weight * ak_
-        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+        total = price_rub + svc
+        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
 
     if enabled.get("express", True):
         ep_ = settings.get("express_percent", 0.25)
         ek_ = settings.get("express_per_kg", 1200)
         svc = price_rub * ep_ + weight * ek_
-        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{price_rub+svc:.0f} ₽</b>")
+        total = price_rub + svc
+        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {svc:.0f} ₽ | Итого: <b>{total:.0f} {sym}</b>")
 
     return "".join(lines)
+
+
+async def get_usd_rate():
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=aiohttp.ClientTimeout(total=5)) as r:
+                d = await r.json(content_type=None)
+                return d["Valute"]["USD"]["Value"]
+    except:
+        return 90.0
+
+
+async def get_kzt_rate():
+    try:
+        async with aiohttp.ClientSession() as s:
+            async with s.get("https://www.cbr-xml-daily.ru/daily_json.js", timeout=aiohttp.ClientTimeout(total=5)) as r:
+                d = await r.json(content_type=None)
+                return 1 / (d["Valute"]["KZT"]["Value"] / d["Valute"]["KZT"]["Nominal"])
+    except:
+        return 5.5
 
 
 class CalcStates(StatesGroup):
@@ -121,6 +219,20 @@ def back_kb():
     return kb.as_markup(resize_keyboard=True)
 
 
+async def send_msg_with_img(message: Message, text: str, img_b64: str, reply_markup=None):
+    """Отправляет сообщение с изображением если оно есть."""
+    if img_b64 and img_b64.startswith("data:image"):
+        try:
+            header, data = img_b64.split(",", 1)
+            img_bytes = base64.b64decode(data)
+            photo = BufferedInputFile(img_bytes, filename="image.jpg")
+            await message.answer_photo(photo, caption=text, parse_mode="HTML", reply_markup=reply_markup)
+            return
+        except:
+            pass
+    await message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+
+
 def make_shop_dispatcher(client_id: int):
     dp = Dispatcher(storage=MemoryStorage())
 
@@ -128,14 +240,17 @@ def make_shop_dispatcher(client_id: int):
     async def cmd_start(message: Message, state: FSMContext):
         await state.clear()
         settings = await get_settings(client_id)
-        text    = settings.get("welcome_text", "Добро пожаловать! 👋")
-        await message.answer(text, reply_markup=main_menu_kb())
+        text = settings.get("msg_welcome") or settings.get("welcome_text") or "Добро пожаловать! 👋"
+        img = settings.get("msg_welcome_img", "")
+        await send_msg_with_img(message, text, img, main_menu_kb())
 
-    # ── КАЛЬКУЛЯТОР — входное меню ──
     @dp.message(F.text == "💸 Калькулятор стоимости")
     async def calc_main(message: Message, state: FSMContext):
         await state.clear()
-        await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
+        settings = await get_settings(client_id)
+        text = settings.get("msg_calc") or "Выберите действие:"
+        img = settings.get("msg_calc_img", "")
+        await send_msg_with_img(message, text, img, calc_menu_kb())
 
     @dp.message(F.text == "🏠 Главное меню")
     async def go_home(message: Message, state: FSMContext):
@@ -144,60 +259,62 @@ def make_shop_dispatcher(client_id: int):
 
     @dp.message(F.text == "💸 Рассчитать стоимость")
     async def calc_start(message: Message, state: FSMContext):
-        await state.set_state(CalcStates.waiting_price)
-        await message.answer(
-            "Введите цену товара в ¥ или пришлите скриншот:",
-            reply_markup=back_kb()
-        )
+        settings = await get_settings(client_id)
+        ai_on = settings.get("ai_recognition", 0) == 1
+        ai_key = settings.get("openai_api", "")
+        if ai_on and ai_key:
+            await state.set_state(CalcStates.waiting_price)
+            await message.answer("Введите цену товара в ¥ или пришлите <b>скриншот</b> из магазина:", parse_mode="HTML", reply_markup=back_kb())
+        else:
+            await state.set_state(CalcStates.waiting_price)
+            await message.answer("Введите цену товара в ¥:", reply_markup=back_kb())
 
     @dp.message(CalcStates.waiting_price, F.photo)
     async def calc_photo(message: Message, state: FSMContext):
-        if not OPENAI_API_KEY:
-            await message.answer("Распознавание фото недоступно. Введите цену числом:")
+        settings = await get_settings(client_id)
+        ai_on = settings.get("ai_recognition", 0) == 1
+        ai_key = settings.get("openai_api", "")
+
+        if not ai_on or not ai_key:
+            await message.answer("Распознавание скриншотов отключено. Введите цену числом:")
             return
-        user_id = message.from_user.id
-        if gpt_usage.get(user_id, 0) >= GPT_LIMIT:
-            await message.answer(f"❌ Лимит {GPT_LIMIT} распознаваний/день исчерпан. Введите цену вручную:")
-            return
-        msg = await message.answer("🔍 Анализируем фото...")
+
+        msg = await message.answer("🔍 Анализируем скриншот...")
         photo = message.photo[-1]
         file_info = await message.bot.get_file(photo.file_id)
         photo_bytes = await message.bot.download_file(file_info.file_path)
         b64 = base64.b64encode(photo_bytes.getvalue()).decode()
+
         try:
             from openai import OpenAI
-            oa = OpenAI(api_key=OPENAI_API_KEY)
+            oa = OpenAI(api_key=ai_key)
             response = oa.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": [
-                    {"type": "text", "text": "Find price in Yuan and weight in kg. Return ONLY: price;weight;name. Example: 25;0.2;AirPods. If not found: ERROR"},
+                    {"type": "text", "text": "Find product price in Yuan (¥) and estimate weight in kg. Return ONLY: price;weight;name. Example: 299;1.2;Кроссовки. If not found: ERROR"},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}"}}
                 ]}],
-                max_tokens=50
+                max_tokens=60
             )
             result = response.choices[0].message.content.strip()
             if "ERROR" in result or ";" not in result:
                 await msg.edit_text("❌ Не удалось найти цену. Введите вручную:")
                 return
-            price, weight, name = result.split(";")
-            price, weight = float(price), float(weight)
-            gpt_usage[user_id] = gpt_usage.get(user_id, 0) + 1
-            settings = await get_settings(client_id)
-            result_text = await calculate(price, weight, settings)
+            price, weight, name = result.split(";", 2)
+            price, weight = float(price.strip()), float(weight.strip())
+            calc_result = await calculate(price, weight, settings)
             await state.clear()
-            await msg.edit_text(
-                f"✅ <b>{name}</b>\n\n{result_text}",
-                parse_mode="HTML",
-                reply_markup=calc_menu_kb()
-            )
+            await msg.edit_text(f"✅ <b>Распознано:</b> {name.strip()}\n\n{calc_result}", parse_mode="HTML", reply_markup=calc_menu_kb())
         except Exception as e:
-            await msg.edit_text("❌ Ошибка. Введите цену вручную:")
+            await msg.edit_text(f"❌ Ошибка распознавания. Введите цену вручную:")
 
     @dp.message(CalcStates.waiting_price, F.text)
     async def calc_price(message: Message, state: FSMContext):
         if message.text == "◀️ Назад":
             await state.clear()
-            await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
+            settings = await get_settings(client_id)
+            text = settings.get("msg_calc") or "Выберите действие:"
+            await message.answer(text, reply_markup=calc_menu_kb())
             return
         try:
             price = float(message.text.replace(',', '.'))
@@ -223,7 +340,6 @@ def make_shop_dispatcher(client_id: int):
         except ValueError:
             await message.answer("Введите число, например: 1.5")
 
-    # ── ПРОМОКОД ──
     @dp.message(F.text == "🎟 У меня есть промокод")
     async def promo_start(message: Message, state: FSMContext):
         await state.set_state(PromoStates.waiting_promo)
@@ -238,15 +354,10 @@ def make_shop_dispatcher(client_id: int):
         discount = await check_promo(client_id, message.text.strip())
         await state.clear()
         if discount:
-            await message.answer(
-                f"✅ Промокод активирован! Скидка: <b>{discount}%</b>",
-                parse_mode="HTML",
-                reply_markup=calc_menu_kb()
-            )
+            await message.answer(f"✅ Промокод активирован! Скидка: <b>{discount}%</b>", parse_mode="HTML", reply_markup=calc_menu_kb())
         else:
             await message.answer("❌ Промокод не найден.", reply_markup=calc_menu_kb())
 
-    # ── ОТСЛЕЖИВАНИЕ ──
     @dp.message(F.text == "🔎 Отследить посылку")
     async def track_start(message: Message, state: FSMContext):
         await state.set_state(TrackStates.waiting_order)
@@ -258,39 +369,70 @@ def make_shop_dispatcher(client_id: int):
             await state.clear()
             await message.answer("Главное меню:", reply_markup=main_menu_kb())
             return
+
         order_id = message.text.strip()
         track = await get_track(client_id, order_id)
         await state.clear()
-        if track:
-            settings = await get_settings(client_id)
-            site = settings.get("tracking_site", "track24")
-            base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
-            track_url = base_url + track
+
+        if not track:
+            await message.answer("❌ Заказ не найден. Обратитесь к менеджеру.", reply_markup=main_menu_kb())
+            return
+
+        settings = await get_settings(client_id)
+        site = settings.get("tracking_site", "track24")
+        api17 = settings.get("track17_api", "")
+        base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
+        track_url = base_url + track
+
+        # Если есть 17track API — показываем статус автоматически
+        if site == "17track" and api17:
+            msg = await message.answer("🔍 Запрашиваем статус посылки...")
+            status_data = await get_track17_status(track, api17)
+            if status_data:
+                status_emoji = {
+                    30: "🚀", 35: "✈️", 40: "🚚", 50: "✅",
+                    60: "↩️", 70: "❌", 80: "🛃"
+                }.get(status_data["status_code"], "📦")
+                text = (
+                    f"📦 <b>Заказ {order_id}</b>\n"
+                    f"Трек-номер: <code>{track}</code>\n\n"
+                    f"{status_emoji} <b>Статус:</b> {status_data['status']}\n"
+                )
+                if status_data["last_event"]:
+                    text += f"📍 <b>Последнее событие:</b>\n{status_data['last_event']}\n"
+                text += f"\n<a href=\"{track_url}\">🔗 Подробнее на 17Track</a>"
+                await msg.edit_text(text, parse_mode="HTML", reply_markup=main_menu_kb())
+            else:
+                await msg.edit_text(
+                    f"📦 <b>Заказ {order_id}</b>\n"
+                    f"Трек-номер: <code>{track}</code>\n\n"
+                    f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
+                    parse_mode="HTML", reply_markup=main_menu_kb()
+                )
+        else:
             await message.answer(
                 f"📦 <b>Заказ {order_id}</b>\n"
                 f"Трек-номер: <code>{track}</code>\n\n"
                 f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-                parse_mode="HTML",
-                reply_markup=main_menu_kb()
+                parse_mode="HTML", reply_markup=main_menu_kb()
             )
-        else:
-            await message.answer("❌ Заказ не найден. Обратитесь к менеджеру.", reply_markup=main_menu_kb())
 
-    # ── ЗАКАЗ ──
     @dp.message(F.text == "🤩 Оформить заказ")
     async def order_msg(message: Message):
         settings = await get_settings(client_id)
         manager = settings.get("manager_link", "@manager")
-        await message.answer(f"Оформить заказ: {manager} 👈\n\nОтправь скриншот товара или ссылку.")
+        text = settings.get("msg_order") or f"Оформить заказ: {manager} 👈\n\nОтправь скриншот товара или ссылку."
+        img = settings.get("msg_order_img", "")
+        await send_msg_with_img(message, text, img)
 
-    # ── ПОДДЕРЖКА ──
     @dp.message(F.text == "❓ Остались вопросы")
     async def support_msg(message: Message):
         settings = await get_settings(client_id)
         manager = settings.get("manager_link", "@manager")
-        await message.answer(f"Напиши менеджеру: {manager}")
+        text = settings.get("msg_support") or f"Напиши менеджеру: {manager}"
+        img = settings.get("msg_support_img", "")
+        await send_msg_with_img(message, text, img)
 
-    # ── FAQ ──
     @dp.message(F.text == "📚 Ответы на вопросы")
     async def faq_msg(message: Message):
         settings = await get_settings(client_id)
@@ -314,10 +456,7 @@ def make_shop_dispatcher(client_id: int):
             faq = json.loads(settings.get("faq_json", "[]"))
             idx = int(callback.data.split("_")[1])
             item = faq[idx]
-            await callback.message.answer(
-                f"❓ <b>{item['question']}</b>\n\n{item['answer']}",
-                parse_mode="HTML"
-            )
+            await callback.message.answer(f"❓ <b>{item['question']}</b>\n\n{item['answer']}", parse_mode="HTML")
         except:
             await callback.message.answer("Ошибка загрузки FAQ.")
         await callback.answer()
@@ -336,19 +475,22 @@ async def main():
 
     tasks = []
     for client in active:
-        from database.db import get_conn
         conn = await get_conn()
         row = await conn.fetchrow("SELECT bot_token FROM clients WHERE id=$1", client["id"])
         await conn.close()
-        if not row or row["bot_token"].startswith("pending_"):
+        if not row or not row["bot_token"] or row["bot_token"].startswith("pending_"):
+            print(f"⚠️ Пропуск {client['bot_name']} — нет токена")
             continue
-        bot = Bot(token=row["bot_token"])
-        dp = make_shop_dispatcher(client["id"])
-        tasks.append(dp.start_polling(bot))
-        print(f"🛍 Запущен бот: {client['bot_name']}")
+        try:
+            bot = Bot(token=row["bot_token"])
+            dp = make_shop_dispatcher(client["id"])
+            tasks.append(dp.start_polling(bot))
+            print(f"🛍 Запущен бот: {client['bot_name']}")
+        except Exception as e:
+            print(f"❌ Ошибка запуска {client['bot_name']}: {e}")
 
     if not tasks:
-        print("⚠️ Нет ботов с токенами.")
+        print("⚠️ Нет ботов с валидными токенами.")
         return
 
     print(f"✅ Запущено {len(tasks)} ботов")
