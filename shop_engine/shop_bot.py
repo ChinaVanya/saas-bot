@@ -94,7 +94,7 @@ def make_shop_dispatcher(client_id: int):
         manager = settings.get("manager_link", "@manager")
         channel = settings.get("channel_link", "@channel")
         await message.answer(
-            f"{text}\n\n📦 Оформление заказов: {manager}\n📢 Наш канал: {channel}",
+            f"{text}",
             reply_markup=main_menu_kb()
         )
 

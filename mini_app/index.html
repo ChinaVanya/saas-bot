@@ -251,6 +251,24 @@
       </div>
     </div>
 
+      <!-- ОБЫЧНЫЙ -->
+      <div class="tariff-block" id="block-normal">
+        <div class="tariff-header">
+          <span class="tariff-type" style="color:#4ade80">📦 Обычный</span>
+          <button class="tariff-toggle active" id="toggle-normal" onclick="toggleTariff('normal')">−</button>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field">
+            <input type="number" id="normal_percent_display" placeholder="8" step="0.1" oninput="updatePreview()">
+            <small>Комиссия %</small>
+          </div>
+        <div class="tariff-field">
+          <input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()">
+          <small>₽ за кг</small>
+        </div>
+      </div>
+    </div>
+
     <div class="card">
       <div class="card-title">Предпросмотр</div>
       <div class="field"><label>Цена товара (¥)</label><input type="number" id="preview_price" placeholder="500" oninput="updatePreview()"></div>
@@ -345,7 +363,7 @@ let faqItems = [];
 let rememberMe = false;
 
 // Состояние тарифов (true = включён)
-let tariffEnabled = { air: true, truck: true, express: true };
+let tariffEnabled = { air: true, truck: true, express: true, normal: true };
 
 // ── Запомнить ──
 function toggleRemember() {
