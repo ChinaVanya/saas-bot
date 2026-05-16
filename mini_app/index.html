@@ -7,15 +7,9 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
-  :root {
-    --bg:#0f0f13; --surface:#1a1a24; --surface2:#22222f; --border:#2e2e3e;
-    --accent:#6c63ff; --accent2:#a78bfa; --green:#22c55e; --red:#ef4444;
-    --text:#f0f0f5; --muted:#7070a0; --radius:14px;
-  }
+  :root { --bg:#0f0f13; --surface:#1a1a24; --surface2:#22222f; --border:#2e2e3e; --accent:#6c63ff; --accent2:#a78bfa; --green:#22c55e; --red:#ef4444; --text:#f0f0f5; --muted:#7070a0; --radius:14px; }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   body { font-family:'Manrope',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
-
-  /* LOGIN */
   .login-screen { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; padding:30px 24px; }
   .login-logo { font-size:48px; margin-bottom:20px; }
   .login-title { font-size:24px; font-weight:800; margin-bottom:8px; text-align:center; }
@@ -29,16 +23,11 @@
   .login-btn:active { transform:scale(.97); }
   .login-btn:disabled { opacity:.5; cursor:not-allowed; }
   .login-error { margin-top:12px; color:var(--red); font-size:13px; font-weight:600; text-align:center; min-height:20px; }
-
-  /* Checkbox */
   .remember-row { display:flex; align-items:center; gap:10px; margin-top:16px; cursor:pointer; width:100%; }
-  .remember-row input[type=checkbox] { display:none; }
   .custom-checkbox { width:20px; height:20px; border-radius:6px; border:2px solid var(--border); background:var(--surface2); flex-shrink:0; display:flex; align-items:center; justify-content:center; transition:all .2s; }
   .custom-checkbox.checked { background:var(--accent); border-color:var(--accent); }
   .custom-checkbox.checked::after { content:'✓'; color:#fff; font-size:12px; font-weight:800; }
   .remember-label { font-size:13px; color:var(--muted); }
-
-  /* MAIN */
   .main-screen { display:none; padding-bottom:80px; }
   .header { background:var(--surface); border-bottom:1px solid var(--border); padding:16px 20px 12px; position:sticky; top:0; z-index:100; }
   .header-top { display:flex; align-items:center; justify-content:space-between; }
@@ -46,24 +35,18 @@
   .logo span { color:var(--accent2); }
   .bot-status { display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); }
   .status-dot { width:8px; height:8px; border-radius:50%; background:var(--green); box-shadow:0 0 8px var(--green); }
-
   .tabs { display:flex; gap:4px; background:var(--surface2); border-radius:12px; padding:4px; margin:16px 20px 0; overflow-x:auto; scrollbar-width:none; }
   .tabs::-webkit-scrollbar { display:none; }
   .tab { flex:1; min-width:fit-content; padding:8px 6px; border:none; border-radius:9px; background:transparent; color:var(--muted); font-family:'Manrope',sans-serif; font-size:11px; font-weight:600; cursor:pointer; transition:all .2s; white-space:nowrap; }
   .tab.active { background:var(--accent); color:#fff; box-shadow:0 2px 12px rgba(108,99,255,.4); }
-
   .page { display:none; padding:20px; }
   .page.active { display:block; }
-
   .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
   .card-title { font-size:13px; font-weight:700; color:var(--muted); letter-spacing:.5px; text-transform:uppercase; margin-bottom:14px; }
-
   .field { margin-bottom:14px; }
   .field label { display:block; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:6px; }
-  .field input, .field textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; outline:none; resize:none; transition:border-color .2s; }
-  .field input:focus, .field textarea:focus { border-color:var(--accent); }
-
-  /* ТАРИФЫ */
+  .field input,.field textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; outline:none; resize:none; transition:border-color .2s; }
+  .field input:focus,.field textarea:focus { border-color:var(--accent); }
   .tariff-block { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:14px; margin-bottom:10px; transition:all .3s; }
   .tariff-block.disabled { opacity:.35; filter:grayscale(1); }
   .tariff-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
@@ -79,7 +62,9 @@
   .tariff-field input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-family:'Manrope',sans-serif; font-size:14px; font-weight:600; outline:none; margin-bottom:4px; transition:border-color .2s; }
   .tariff-field input:focus { border-color:var(--accent); }
   .tariff-field small { display:block; font-size:10px; color:var(--muted); }
-
+  .tariff-info { display:none; margin-top:10px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px; font-size:12px; color:var(--muted); line-height:1.8; }
+  .tariff-info.show { display:block; }
+  .tariff-info b { color:var(--text); }
   .btn { width:100%; padding:13px; border:none; border-radius:10px; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:all .2s; }
   .btn-primary { background:var(--accent); color:#fff; box-shadow:0 4px 16px rgba(108,99,255,.35); }
   .btn-primary:active { transform:scale(.97); }
@@ -90,40 +75,37 @@
   .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
   .btn-suggest { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Manrope',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .2s; text-align:left; width:100%; margin-bottom:8px; }
   .btn-suggest:active { background:var(--accent); color:#fff; border-color:var(--accent); }
-
+  .btn-info { background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--muted); font-size:11px; cursor:pointer; padding:4px 8px; font-family:'Manrope',sans-serif; font-weight:600; white-space:nowrap; }
   .promo-item { display:flex; align-items:center; justify-content:space-between; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
   .promo-code { font-size:14px; font-weight:700; letter-spacing:.5px; }
   .promo-discount { font-size:12px; font-weight:600; color:var(--green); background:rgba(34,197,94,.12); border-radius:6px; padding:3px 8px; margin-right:10px; }
   .promo-right { display:flex; align-items:center; gap:8px; }
-
   .track-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:8px; }
   .track-order { font-size:13px; color:var(--muted); margin-bottom:3px; }
   .track-num { font-size:14px; font-weight:700; font-family:monospace; }
-
   .faq-item { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px; margin-bottom:10px; }
-  .faq-item input, .faq-item textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Manrope',sans-serif; font-size:13px; outline:none; margin-bottom:8px; resize:none; }
+  .faq-item input,.faq-item textarea { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Manrope',sans-serif; font-size:13px; outline:none; margin-bottom:8px; resize:none; }
   .faq-item-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
   .faq-num { font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; }
-
   .bot-info-card { background:linear-gradient(135deg,rgba(108,99,255,.15),rgba(108,99,255,.05)); border:1px solid rgba(108,99,255,.3); border-radius:var(--radius); padding:18px; margin-bottom:14px; }
   .bot-info-title { font-size:16px; font-weight:800; margin-bottom:4px; }
   .bot-info-sub { font-size:13px; color:var(--muted); margin-bottom:14px; }
   .bot-token-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:11px 14px; color:var(--text); font-family:'Manrope',sans-serif; font-size:12px; outline:none; margin-bottom:10px; transition:border-color .2s; }
   .bot-token-input:focus { border-color:var(--accent); }
-
+  .tracking-sites { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .tracking-site { background:var(--surface2); border:2px solid var(--border); border-radius:12px; padding:14px 10px; text-align:center; cursor:pointer; transition:all .2s; }
+  .tracking-site.selected { border-color:var(--accent); background:rgba(108,99,255,.1); }
+  .tracking-site .site-name { font-size:14px; font-weight:700; margin-bottom:3px; }
+  .tracking-site .site-desc { font-size:11px; color:var(--muted); }
+  .tracking-info { display:none; background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px; font-size:12px; color:var(--muted); line-height:1.9; }
+  .tracking-info.show { display:block; }
+  .tracking-info b { color:var(--text); }
+  .tracking-info a { color:var(--accent); }
   .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px 20px; font-size:14px; font-weight:600; opacity:0; pointer-events:none; transition:all .3s; z-index:999; white-space:nowrap; }
   .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
   .toast.ok { border-color:var(--green); color:var(--green); }
   .toast.err { border-color:var(--red); color:var(--red); }
-
   .empty { text-align:center; padding:30px 0; color:var(--muted); font-size:14px; }
-
-  /* TRACKING */
-  .tracking-sites { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:4px; }
-  .tracking-site { background:var(--surface2); border:2px solid var(--border); border-radius:10px; padding:10px 8px; text-align:center; cursor:pointer; transition:all .2s; }
-  .tracking-site.selected { border-color:var(--accent); background:rgba(108,99,255,.1); }
-  .tracking-site .site-name { font-size:13px; font-weight:700; margin-bottom:2px; }
-  .tracking-site .site-desc { font-size:10px; color:var(--muted); }
   .empty-icon { font-size:32px; margin-bottom:8px; }
   .row { display:flex; gap:10px; }
   .row .field { flex:1; margin-bottom:0; }
@@ -132,40 +114,29 @@
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-screen" id="loginScreen">
   <div class="login-logo">🤖</div>
   <div class="login-title">Панель управления</div>
   <div class="login-subtitle">Введите код доступа и токен вашего бота</div>
-
   <div class="login-hint">Код доступа</div>
   <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
-
   <div class="login-hint">Токен бота (от @BotFather)</div>
   <input class="login-input token-input" id="tokenInput" type="text" placeholder="123456789:ABC-DEF...">
-
   <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти в панель</button>
-
   <div class="remember-row" onclick="toggleRemember()">
     <div class="custom-checkbox" id="rememberBox"></div>
     <span class="remember-label">Запомнить меня на 7 дней</span>
   </div>
-
   <div class="login-error" id="loginError"></div>
 </div>
 
-<!-- MAIN -->
 <div class="main-screen" id="mainScreen">
   <div class="header">
     <div class="header-top">
       <div class="logo">Bot<span>Panel</span></div>
-      <div class="bot-status">
-        <div class="status-dot" id="statusDot"></div>
-        <span id="statusText">Онлайн</span>
-      </div>
+      <div class="bot-status"><div class="status-dot"></div><span>Онлайн</span></div>
     </div>
   </div>
-
   <div class="tabs">
     <button class="tab active" onclick="switchTab('bot')">🤖 Бот</button>
     <button class="tab" onclick="switchTab('tariffs')">💰 Тарифы</button>
@@ -175,7 +146,6 @@
     <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
   </div>
 
-  <!-- БОТ -->
   <div class="page active" id="page-bot">
     <div class="bot-info-card">
       <div class="bot-info-title" id="botName">Мой магазин</div>
@@ -184,7 +154,6 @@
       <input class="bot-token-input" id="newTokenInput" placeholder="Новый токен от @BotFather">
       <button class="btn btn-primary" onclick="updateToken()">Обновить токен бота</button>
     </div>
-
     <div class="card">
       <div class="card-title">Инструкция</div>
       <div style="font-size:13px;line-height:2;color:var(--muted);">
@@ -195,84 +164,82 @@
         5. Ваш бот начнёт работать! 🎉
       </div>
     </div>
-
     <button class="btn btn-apply" onclick="applyToBot()">🚀 Применить к боту</button>
   </div>
 
-  <!-- ТАРИФЫ -->
   <div class="page" id="page-tariffs">
     <div class="card">
       <div class="card-title">Варианты доставки</div>
 
-      <!-- АВИА -->
-      <div class="tariff-block" id="block-air">
-        <div class="tariff-header">
-          <span class="tariff-type air">✈️ Авиа</span>
-          <button class="tariff-toggle active" id="toggle-air" onclick="toggleTariff('air')">−</button>
-        </div>
-        <div class="tariff-inputs">
-          <div class="tariff-field">
-            <input type="number" id="air_percent_display" placeholder="17" step="0.1" oninput="updatePreview()">
-            <small>Комиссия %</small>
-          </div>
-          <div class="tariff-field">
-            <input type="number" id="air_per_kg" placeholder="700" step="10" oninput="updatePreview()">
-            <small>₽ за кг</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- АВТО -->
-      <div class="tariff-block" id="block-truck">
-        <div class="tariff-header">
-          <span class="tariff-type truck">🚛 Авто</span>
-          <button class="tariff-toggle active" id="toggle-truck" onclick="toggleTariff('truck')">−</button>
-        </div>
-        <div class="tariff-inputs">
-          <div class="tariff-field">
-            <input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()">
-            <small>Комиссия %</small>
-          </div>
-          <div class="tariff-field">
-            <input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()">
-            <small>₽ за кг</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- ЭКСПРЕСС -->
-      <div class="tariff-block" id="block-express">
-        <div class="tariff-header">
-          <span class="tariff-type express">⚡ Экспресс</span>
-          <button class="tariff-toggle active" id="toggle-express" onclick="toggleTariff('express')">−</button>
-        </div>
-        <div class="tariff-inputs">
-          <div class="tariff-field">
-            <input type="number" id="express_percent_display" placeholder="25" step="0.1" oninput="updatePreview()">
-            <small>Комиссия %</small>
-          </div>
-          <div class="tariff-field">
-            <input type="number" id="express_per_kg" placeholder="1200" step="10" oninput="updatePreview()">
-            <small>₽ за кг</small>
-          </div>
-        </div>
-      </div>
-
-      <!-- ОБЫЧНЫЙ -->
       <div class="tariff-block" id="block-normal">
         <div class="tariff-header">
           <span class="tariff-type normal">📦 Обычный</span>
-          <button class="tariff-toggle active" id="toggle-normal" onclick="toggleTariff('normal')">−</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn-info" onclick="toggleTariffInfo('tinfo-normal',this)">📖 Инфо</button>
+            <button class="tariff-toggle active" id="toggle-normal" onclick="toggleTariff('normal')">−</button>
+          </div>
         </div>
         <div class="tariff-inputs">
-          <div class="tariff-field">
-            <input type="number" id="normal_percent_display" placeholder="8" step="0.1" oninput="updatePreview()">
-            <small>Комиссия %</small>
+          <div class="tariff-field"><input type="number" id="normal_percent_display" placeholder="8" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
+          <div class="tariff-field"><input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()"><small>₽ за кг</small></div>
+        </div>
+        <div class="tariff-info" id="tinfo-normal">
+          <b>📦 Обычная доставка (35-50 дней)</b><br>Самый дешёвый вариант. Подходит для нетяжёлых товаров без спешки.<br><br>
+          <b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания прямо в боте.
+        </div>
+      </div>
+
+      <div class="tariff-block" id="block-truck">
+        <div class="tariff-header">
+          <span class="tariff-type truck">🚛 Авто</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn-info" onclick="toggleTariffInfo('tinfo-truck',this)">📖 Инфо</button>
+            <button class="tariff-toggle active" id="toggle-truck" onclick="toggleTariff('truck')">−</button>
           </div>
-          <div class="tariff-field">
-            <input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()">
-            <small>₽ за кг</small>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
+          <div class="tariff-field"><input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()"><small>₽ за кг</small></div>
+        </div>
+        <div class="tariff-info" id="tinfo-truck">
+          <b>🚛 Автодоставка (25-40 дней)</b><br>Популярный вариант — баланс цены и скорости.<br><br>
+          <b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания прямо в боте.
+        </div>
+      </div>
+
+      <div class="tariff-block" id="block-air">
+        <div class="tariff-header">
+          <span class="tariff-type air">✈️ Авиа</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn-info" onclick="toggleTariffInfo('tinfo-air',this)">📖 Инфо</button>
+            <button class="tariff-toggle active" id="toggle-air" onclick="toggleTariff('air')">−</button>
           </div>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="air_percent_display" placeholder="17" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
+          <div class="tariff-field"><input type="number" id="air_per_kg" placeholder="700" step="10" oninput="updatePreview()"><small>₽ за кг</small></div>
+        </div>
+        <div class="tariff-info" id="tinfo-air">
+          <b>✈️ Авиадоставка (7-14 дней)</b><br>Быстро. Подходит для лёгких дорогих товаров или срочных заказов.<br><br>
+          <b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания прямо в боте.
+        </div>
+      </div>
+
+      <div class="tariff-block" id="block-express">
+        <div class="tariff-header">
+          <span class="tariff-type express">⚡ Экспресс</span>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button class="btn-info" onclick="toggleTariffInfo('tinfo-express',this)">📖 Инфо</button>
+            <button class="tariff-toggle active" id="toggle-express" onclick="toggleTariff('express')">−</button>
+          </div>
+        </div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="express_percent_display" placeholder="25" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
+          <div class="tariff-field"><input type="number" id="express_per_kg" placeholder="1200" step="10" oninput="updatePreview()"><small>₽ за кг</small></div>
+        </div>
+        <div class="tariff-info" id="tinfo-express">
+          <b>⚡ Экспресс (5-7 дней)</b><br>Самый быстрый вариант. Дороже, но товар придёт за неделю.<br><br>
+          <b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания прямо в боте.
         </div>
       </div>
     </div>
@@ -283,11 +250,9 @@
       <div class="field"><label>Вес (кг)</label><input type="number" id="preview_weight" placeholder="1.5" step="0.1" oninput="updatePreview()"></div>
       <div id="preview_result" style="font-size:13px;color:var(--muted);line-height:1.9;"></div>
     </div>
-
     <button class="btn btn-primary" onclick="saveTariffs()">Сохранить тарифы</button>
   </div>
 
-  <!-- ПРОМОКОДЫ -->
   <div class="page" id="page-promos">
     <div class="card">
       <div class="card-title">Добавить промокод</div>
@@ -304,11 +269,10 @@
     </div>
   </div>
 
-  <!-- ТРЕКИ -->
   <div class="page" id="page-tracks">
     <div class="card">
       <div class="card-title">Сайт отслеживания</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Покупатель получит кликабельную ссылку на выбранный сайт</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Покупатель получит ссылку на выбранный сайт</div>
       <div class="tracking-sites">
         <div class="tracking-site selected" id="site-track24" onclick="selectSite('track24')">
           <div class="site-name">🇷🇺 Track24</div>
@@ -318,17 +282,29 @@
           <div class="site-name">🌍 17Track</div>
           <div class="site-desc">Международный</div>
         </div>
-        <div class="tracking-site" id="site-pochta" onclick="selectSite('pochta')">
-          <div class="site-name">📮 Почта РФ</div>
-          <div class="site-desc">pochta.ru</div>
-        </div>
-        <div class="tracking-site" id="site-cainiao" onclick="selectSite('cainiao')">
-          <div class="site-name">📦 Cainiao</div>
-          <div class="site-desc">AliExpress</div>
-        </div>
+      </div>
+      <div id="instr-track24" class="tracking-info show">
+        <b>📖 Track24.ru — бесплатно</b><br><br>
+        Покупатель нажимает ссылку в боте → переходит на track24.ru → вводит трек-номер → видит статус.<br><br>
+        <b>Что нужно сделать вам:</b><br>
+        1. Зайдите на track24.ru<br>
+        2. Зарегистрируйтесь (бесплатно)<br>
+        3. В разделе <b>«Посылки»</b> добавьте трек-номер вручную<br>
+        4. Сайт будет автоматически обновлять статус<br><br>
+        Покупатель переходит по ссылке и видит статус самостоятельно.
+      </div>
+      <div id="instr-17track" class="tracking-info">
+        <b>📖 17Track.net — платный API</b><br><br>
+        Покупатель нажимает ссылку → переходит на 17track.net → вводит трек-номер вручную.<br><br>
+        <b>Как подключить автоматический статус:</b><br>
+        1. Зайдите на 17track.net → Sign Up<br>
+        2. Войдите → перейдите в раздел <b>Developer → API</b><br>
+        3. Создайте приложение → получите API-ключ<br>
+        4. Выберите тариф (от $0.003 за запрос)<br>
+        5. Вставьте API-ключ в настройки бота<br><br>
+        <b>Без API:</b> покупатель просто вводит трек на сайте вручную — это бесплатно.
       </div>
     </div>
-
     <div class="card">
       <div class="card-title">Добавить трек-номер</div>
       <div class="field"><label>Номер заказа</label><input type="text" id="new_order_id" placeholder="ORD-001"></div>
@@ -341,24 +317,20 @@
     </div>
   </div>
 
-  <!-- FAQ -->
   <div class="page" id="page-faq">
     <div class="card">
       <div class="card-title">Вопросы и ответы</div>
       <div id="faq-list"></div>
       <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:8px">+ Добавить вопрос</button>
     </div>
-
     <div class="card">
       <div class="card-title">Предлагаемые вопросы</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Нажмите чтобы добавить в список</div>
       <div id="suggested-list"></div>
     </div>
-
     <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
   </div>
 
-  <!-- ОБЩЕЕ -->
   <div class="page" id="page-general">
     <div class="card">
       <div class="card-title">Контакты</div>
@@ -380,98 +352,86 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 const INIT_DATA = tg.initData || 'dev';
 const API = '';
-const TG_USERNAME = tg.initDataUnsafe?.user?.username || '';
-const REMEMBER_KEY = `botpanel_session_${TG_USERNAME}`;
+const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
+const SKEY = 'bp_' + TG_USERNAME;
 
-let CLIENT_ID = null;
-let settings = {};
-let promos = [];
-let tracks = [];
-let faqItems = [];
+let CLIENT_ID = null, settings = {}, promos = [], tracks = [], faqItems = [];
 let rememberMe = false;
+let tariffEnabled = {air:true,truck:true,express:true,normal:true};
+let selectedSite = 'track24';
 
-// Состояние тарифов (true = включён)
-let tariffEnabled = { air: true, truck: true, express: true, normal: true };
-
-// ── Запомнить ──
 function toggleRemember() {
   rememberMe = !rememberMe;
-  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
+  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe?' checked':'');
 }
 
-function saveSession(clientId, code, token, botName) {
+function saveSession(cid, botName) {
   if (!rememberMe) return;
-  const expires = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  localStorage.setItem(REMEMBER_KEY, JSON.stringify({ clientId, code, token, botName, expires }));
+  try {
+    localStorage.setItem(SKEY, JSON.stringify({
+      cid, botName,
+      code: document.getElementById('codeInput').value.trim().toUpperCase(),
+      token: document.getElementById('tokenInput').value.trim(),
+      exp: Date.now() + 7*864e5
+    }));
+  } catch {}
 }
 
-function loadSession() {
+function getSession() {
   try {
-    const raw = localStorage.getItem(REMEMBER_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (Date.now() > data.expires) { localStorage.removeItem(REMEMBER_KEY); return null; }
-    return data;
+    const d = JSON.parse(localStorage.getItem(SKEY));
+    if (!d || Date.now() > d.exp) { localStorage.removeItem(SKEY); return null; }
+    return d;
   } catch { return null; }
 }
 
-// ── Автовход ──
 window.addEventListener('DOMContentLoaded', async () => {
-  const session = loadSession();
-  if (session) {
-    CLIENT_ID = session.clientId;
-    document.getElementById('botName').textContent = session.botName || 'Мой магазин';
-    try {
+  try {
+    const s = getSession();
+    if (s) {
+      CLIENT_ID = s.cid;
+      document.getElementById('botName').textContent = s.botName || 'Мой магазин';
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainScreen').style.display = 'block';
-    } catch {
-      localStorage.removeItem(REMEMBER_KEY);
     }
-  }
+  } catch { localStorage.removeItem(SKEY); }
 });
 
-// ── Вход ──
 document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
 document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
 async function doLogin() {
   const code = document.getElementById('codeInput').value.trim().toUpperCase();
   const token = document.getElementById('tokenInput').value.trim();
-  if (!code || !token) { document.getElementById('loginError').textContent = '❌ Заполните оба поля'; return; }
-
-  const btn = document.getElementById('loginBtn');
   const err = document.getElementById('loginError');
+  if (!code || !token) { err.textContent = '❌ Заполните оба поля'; return; }
+  const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
-
   try {
-    const r = await fetch(`${API}/api/auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-init-data': INIT_DATA },
-      body: JSON.stringify({ code, username: TG_USERNAME, token })
+    const r = await fetch(API+'/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},
+      body: JSON.stringify({code, username:TG_USERNAME, token})
     });
     const data = await r.json();
     if (!r.ok || !data.client_id) {
       err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
-      btn.disabled = false; btn.textContent = 'Войти в панель';
-      tg.HapticFeedback.notificationOccurred('error');
-      return;
+      btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
     CLIENT_ID = data.client_id;
     const botName = data.bot_name || 'Мой магазин';
     document.getElementById('botName').textContent = botName;
-    saveSession(CLIENT_ID, code, token, botName);
+    saveSession(CLIENT_ID, botName);
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
-  } catch(e) {
+  } catch {
     err.textContent = '❌ Ошибка соединения';
     btn.disabled = false; btn.textContent = 'Войти в панель';
   }
 }
 
-// ── Табы ──
 function switchTab(name) {
   const pages = ['bot','tariffs','promos','tracks','faq','general'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
@@ -479,7 +439,6 @@ function switchTab(name) {
   document.getElementById('page-'+name).classList.add('active');
 }
 
-// ── Toast ──
 function showToast(msg, type='ok') {
   const t = document.getElementById('toast');
   t.textContent = (type==='ok'?'✅ ':'❌ ') + msg;
@@ -487,36 +446,16 @@ function showToast(msg, type='ok') {
   setTimeout(() => t.className='toast', 2500);
 }
 
-// ── API ──
-async function apiGet(path) {
-  const r = await fetch(`${API}/api/${path}`, { headers:{'x-init-data':INIT_DATA} });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function apiPost(path, body) {
-  const r = await fetch(`${API}/api/${path}`, { method:'POST', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA}, body:JSON.stringify(body) });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
-async function apiDelete(path, body) {
-  const r = await fetch(`${API}/api/${path}`, { method:'DELETE', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA}, body:JSON.stringify(body) });
-  if(!r.ok) throw new Error(await r.text());
-  return r.json();
-}
+async function apiGet(p) { const r = await fetch(API+'/api/'+p,{headers:{'x-init-data':INIT_DATA}}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
 
-// ── Загрузка ──
 async function loadAll() {
-  const [s, p, tr] = await Promise.all([
-    apiGet(`settings/${CLIENT_ID}`),
-    apiGet(`promos/${CLIENT_ID}`),
-    apiGet(`tracks/${CLIENT_ID}`)
-  ]);
+  const [s,p,tr] = await Promise.all([apiGet('settings/'+CLIENT_ID),apiGet('promos/'+CLIENT_ID),apiGet('tracks/'+CLIENT_ID)]);
   settings=s; promos=p.promos; tracks=tr.tracks;
   fillSettings(); renderPromos(); renderTracks();
   try { faqItems=JSON.parse(settings.faq_json||'[]'); } catch { faqItems=[]; }
-  renderFaqItems();
-  renderSuggested();
-  loadTrackingSite();
+  renderFaqItems(); renderSuggested();
 }
 
 function fillSettings() {
@@ -524,41 +463,39 @@ function fillSettings() {
   document.getElementById('air_per_kg').value = settings.air_per_kg;
   document.getElementById('truck_percent_display').value = (settings.truck_percent*100).toFixed(1);
   document.getElementById('truck_per_kg').value = settings.truck_per_kg;
-  document.getElementById('express_percent_display').value = settings.express_percent ? (settings.express_percent*100).toFixed(1) : '25';
-  document.getElementById('express_per_kg').value = settings.express_per_kg || '1200';
-  document.getElementById('normal_percent_display').value = settings.normal_percent ? (settings.normal_percent*100).toFixed(1) : '8';
-  document.getElementById('normal_per_kg').value = settings.normal_per_kg || '200';
+  document.getElementById('express_percent_display').value = settings.express_percent?(settings.express_percent*100).toFixed(1):'25';
+  document.getElementById('express_per_kg').value = settings.express_per_kg||'1200';
+  document.getElementById('normal_percent_display').value = settings.normal_percent?(settings.normal_percent*100).toFixed(1):'8';
+  document.getElementById('normal_per_kg').value = settings.normal_per_kg||'200';
   document.getElementById('manager_link').value = settings.manager_link||'';
   document.getElementById('channel_link').value = settings.channel_link||'';
   document.getElementById('welcome_text').value = settings.welcome_text||'';
-
-  // Загружаем состояние тарифов
   try {
-    const saved = JSON.parse(settings.tariff_enabled||'{}');
-    tariffEnabled = { air: saved.air!==false, truck: saved.truck!==false, express: saved.express!==false, normal: saved.normal!==false };
-  } catch { tariffEnabled = { air:true, truck:true, express:true }; }
-  ['air','truck','express','normal'].forEach(t => updateTariffUI(t));
+    const sv = JSON.parse(settings.tariff_enabled||'{}');
+    tariffEnabled = {air:sv.air!==false,truck:sv.truck!==false,express:sv.express!==false,normal:sv.normal!==false};
+  } catch { tariffEnabled={air:true,truck:true,express:true,normal:true}; }
+  ['air','truck','express','normal'].forEach(t=>updateTariffUI(t));
+  if (settings.tracking_site) selectSite(settings.tracking_site, false);
 }
 
-// ── Тарифы ──
 function toggleTariff(type) {
-  tariffEnabled[type] = !tariffEnabled[type];
+  tariffEnabled[type]=!tariffEnabled[type];
   updateTariffUI(type);
   tg.HapticFeedback.impactOccurred('light');
 }
 
 function updateTariffUI(type) {
-  const block = document.getElementById('block-'+type);
-  const btn = document.getElementById('toggle-'+type);
-  if (tariffEnabled[type]) {
-    block.classList.remove('disabled');
-    btn.textContent = '−';
-    btn.className = 'tariff-toggle active';
-  } else {
-    block.classList.add('disabled');
-    btn.textContent = '+';
-    btn.className = 'tariff-toggle inactive';
-  }
+  const bl=document.getElementById('block-'+type), bt=document.getElementById('toggle-'+type);
+  if(!bl||!bt) return;
+  if(tariffEnabled[type]){bl.classList.remove('disabled');bt.textContent='−';bt.className='tariff-toggle active';}
+  else{bl.classList.add('disabled');bt.textContent='+';bt.className='tariff-toggle inactive';}
+}
+
+function toggleTariffInfo(id, btn) {
+  const el=document.getElementById(id);
+  el.classList.toggle('show');
+  btn.textContent = el.classList.contains('show') ? '📖 Скрыть' : '📖 Инфо';
+  tg.HapticFeedback.impactOccurred('light');
 }
 
 function updatePreview() {
@@ -566,222 +503,113 @@ function updatePreview() {
   const weight=parseFloat(document.getElementById('preview_weight').value)||0;
   const rate=13;
   if(!price&&!weight){document.getElementById('preview_result').innerHTML='';return;}
-  const pr=price*rate;
-  let html='';
-  if(tariffEnabled.truck){
-    const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11;
-    const tk=parseFloat(document.getElementById('truck_per_kg').value)||350;
-    html+=`🚛 Авто: <b>${Math.round(pr+pr*tp+weight*tk).toLocaleString()} ₽</b><br>`;
-  }
-  if(tariffEnabled.air){
-    const ap=parseFloat(document.getElementById('air_percent_display').value)/100||0.17;
-    const ak=parseFloat(document.getElementById('air_per_kg').value)||700;
-    html+=`✈️ Авиа: <b>${Math.round(pr+pr*ap+weight*ak).toLocaleString()} ₽</b><br>`;
-  }
-  if(tariffEnabled.express){
-    const ep=parseFloat(document.getElementById('express_percent_display').value)/100||0.25;
-    const ek=parseFloat(document.getElementById('express_per_kg').value)||1200;
-    html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b><br>`;
-  }
-  if(tariffEnabled.normal){
-    const np=parseFloat(document.getElementById('normal_percent_display').value)/100||0.08;
-    const nk=parseFloat(document.getElementById('normal_per_kg').value)||200;
-    html+=`📦 Обычный: <b>${Math.round(pr+pr*np+weight*nk).toLocaleString()} ₽</b>`;
-  }
+  const pr=price*rate; let html='';
+  if(tariffEnabled.normal){const np=parseFloat(document.getElementById('normal_percent_display').value)/100||0.08,nk=parseFloat(document.getElementById('normal_per_kg').value)||200;html+=`📦 Обычный: <b>${Math.round(pr+pr*np+weight*nk).toLocaleString()} ₽</b><br>`;}
+  if(tariffEnabled.truck){const tp=parseFloat(document.getElementById('truck_percent_display').value)/100||0.11,tk=parseFloat(document.getElementById('truck_per_kg').value)||350;html+=`🚛 Авто: <b>${Math.round(pr+pr*tp+weight*tk).toLocaleString()} ₽</b><br>`;}
+  if(tariffEnabled.air){const ap=parseFloat(document.getElementById('air_percent_display').value)/100||0.17,ak=parseFloat(document.getElementById('air_per_kg').value)||700;html+=`✈️ Авиа: <b>${Math.round(pr+pr*ap+weight*ak).toLocaleString()} ₽</b><br>`;}
+  if(tariffEnabled.express){const ep=parseFloat(document.getElementById('express_percent_display').value)/100||0.25,ek=parseFloat(document.getElementById('express_per_kg').value)||1200;html+=`⚡ Экспресс: <b>${Math.round(pr+pr*ep+weight*ek).toLocaleString()} ₽</b>`;}
   document.getElementById('preview_result').innerHTML=html||'<span style="color:var(--muted)">Все тарифы отключены</span>';
 }
 
 async function saveTariffs() {
   try {
-    await apiPost(`settings/${CLIENT_ID}`, {
-      air_percent: parseFloat(document.getElementById('air_percent_display').value)/100,
-      air_per_kg: parseFloat(document.getElementById('air_per_kg').value),
-      truck_percent: parseFloat(document.getElementById('truck_percent_display').value)/100,
-      truck_per_kg: parseFloat(document.getElementById('truck_per_kg').value),
-      express_percent: parseFloat(document.getElementById('express_percent_display').value)/100,
-      express_per_kg: parseFloat(document.getElementById('express_per_kg').value),
-      express_percent: parseFloat(document.getElementById('express_percent_display').value)/100,
-      express_per_kg: parseFloat(document.getElementById('express_per_kg').value),
-      normal_percent: parseFloat(document.getElementById('normal_percent_display').value)/100,
-      normal_per_kg: parseFloat(document.getElementById('normal_per_kg').value),
-      tariff_enabled: JSON.stringify(tariffEnabled),
+    await apiPost('settings/'+CLIENT_ID,{
+      air_percent:parseFloat(document.getElementById('air_percent_display').value)/100,
+      air_per_kg:parseFloat(document.getElementById('air_per_kg').value),
+      truck_percent:parseFloat(document.getElementById('truck_percent_display').value)/100,
+      truck_per_kg:parseFloat(document.getElementById('truck_per_kg').value),
+      express_percent:parseFloat(document.getElementById('express_percent_display').value)/100,
+      express_per_kg:parseFloat(document.getElementById('express_per_kg').value),
+      normal_percent:parseFloat(document.getElementById('normal_percent_display').value)/100,
+      normal_per_kg:parseFloat(document.getElementById('normal_per_kg').value),
+      tariff_enabled:JSON.stringify(tariffEnabled),
+      tracking_site:selectedSite,
     });
-    showToast('Тарифы сохранены!');
-    tg.HapticFeedback.notificationOccurred('success');
+    showToast('Тарифы сохранены!'); tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка','err'); }
 }
 
-// ── Применить к боту ──
 async function applyToBot() {
-  try {
-    await saveTariffs();
-    await saveGeneral();
-    await saveFaq();
-    await apiPost(`apply/${CLIENT_ID}`, { section: 'all' });
-    showToast('Применено к боту! 🚀');
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка применения','err'); }
+  try { await saveTariffs(); await saveGeneral(); await saveFaq(); await apiPost('apply/'+CLIENT_ID,{section:'all'}); showToast('Применено к боту! 🚀'); tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка применения','err'); }
 }
 
-// ── Обновить токен ──
 async function updateToken() {
-  const token = document.getElementById('newTokenInput').value.trim();
+  const token=document.getElementById('newTokenInput').value.trim();
   if(!token||!token.includes(':')) return showToast('Введите корректный токен','err');
-  try {
-    await apiPost(`token/${CLIENT_ID}`,{token});
-    showToast('Токен обновлён!');
-    document.getElementById('newTokenInput').value='';
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка','err'); }
+  try { await apiPost('token/'+CLIENT_ID,{token}); showToast('Токен обновлён!'); document.getElementById('newTokenInput').value=''; tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка','err'); }
 }
 
-// ── Промокоды ──
 function renderPromos() {
   const el=document.getElementById('promos-list');
   if(!promos.length){el.innerHTML='<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>';return;}
-  el.innerHTML=promos.map(p=>`
-    <div class="promo-item">
-      <span class="promo-code">${p.code}</span>
-      <div class="promo-right"><span class="promo-discount">-${p.discount}%</span>
-      <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div>
-    </div>`).join('');
+  el.innerHTML=promos.map(p=>`<div class="promo-item"><span class="promo-code">${p.code}</span><div class="promo-right"><span class="promo-discount">-${p.discount}%</span><button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div></div>`).join('');
 }
 async function addPromo() {
   const code=document.getElementById('new_promo_code').value.trim().toUpperCase();
   const discount=parseInt(document.getElementById('new_promo_discount').value);
   if(!code||!discount) return showToast('Заполни код и скидку','err');
-  try {
-    await apiPost(`promos/${CLIENT_ID}`,{code,discount});
-    promos.push({code,discount}); renderPromos();
-    document.getElementById('new_promo_code').value='';
-    document.getElementById('new_promo_discount').value='';
-    showToast('Промокод добавлен!');
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка','err'); }
+  try { await apiPost('promos/'+CLIENT_ID,{code,discount}); promos.push({code,discount}); renderPromos(); document.getElementById('new_promo_code').value=''; document.getElementById('new_promo_discount').value=''; showToast('Промокод добавлен!'); tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка','err'); }
 }
 async function deletePromo(code) {
-  try {
-    await apiDelete(`promos/${CLIENT_ID}`,{code});
-    promos=promos.filter(p=>p.code!==code); renderPromos();
-    showToast('Промокод удалён');
-  } catch { showToast('Ошибка','err'); }
+  try { await apiDelete('promos/'+CLIENT_ID,{code}); promos=promos.filter(p=>p.code!==code); renderPromos(); showToast('Промокод удалён'); }
+  catch { showToast('Ошибка','err'); }
 }
 
-// ── Треки ──
-const TRACKING_URLS = {
-  'track24':  'https://track24.ru/?code=',
-  '17track':  'https://www.17track.net/ru/track?nums=',
-  'pochta':   'https://www.pochta.ru/tracking#',
-  'cainiao':  'https://global.cainiao.com/detail.htm?mailNoList=',
-};
-let selectedSite = 'track24';
-
-function selectSite(site) {
-  selectedSite = site;
-  document.querySelectorAll('.tracking-site').forEach(el => el.classList.remove('selected'));
-  document.getElementById('site-' + site).classList.add('selected');
-  // Сохраняем выбор
-  try { localStorage.setItem('tracking_site_' + CLIENT_ID, site); } catch {}
-  renderTracks();
-  tg.HapticFeedback.impactOccurred('light');
-}
-
-function loadTrackingSite() {
-  try {
-    const saved = localStorage.getItem('tracking_site_' + CLIENT_ID);
-    if (saved && TRACKING_URLS[saved]) selectSite(saved);
-  } catch {}
+function selectSite(site, haptic=true) {
+  selectedSite=site;
+  document.querySelectorAll('.tracking-site').forEach(el=>el.classList.remove('selected'));
+  const el=document.getElementById('site-'+site); if(el) el.classList.add('selected');
+  document.getElementById('instr-track24').className='tracking-info'+(site==='track24'?' show':'');
+  document.getElementById('instr-17track').className='tracking-info'+(site==='17track'?' show':'');
+  if(haptic) tg.HapticFeedback.impactOccurred('light');
 }
 
 function renderTracks() {
   const el=document.getElementById('tracks-list');
   if(!tracks.length){el.innerHTML='<div class="empty"><div class="empty-icon">📦</div>Заказов нет</div>';return;}
-  el.innerHTML=tracks.map(t=>{
-    const url = TRACKING_URLS[selectedSite] + encodeURIComponent(t.track_num);
-    return `
-    <div class="track-item">
-      <div class="track-order">Заказ: ${t.order_id}</div>
-      <div class="track-num">${t.track_num}</div>
-      <a href="${url}" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Отследить →</a>
-    </div>`;
-  }).join('');
+  const urls={'track24':'https://track24.ru/?code=','17track':'https://www.17track.net/ru/track?nums='};
+  const base=urls[selectedSite]||urls['track24'];
+  el.innerHTML=tracks.map(t=>`<div class="track-item"><div class="track-order">Заказ: ${t.order_id}</div><div class="track-num">${t.track_num}</div><a href="${base+encodeURIComponent(t.track_num)}" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--accent);font-weight:600;text-decoration:none;">🔗 Отследить →</a></div>`).join('');
 }
 async function addTrack() {
-  const order_id=document.getElementById('new_order_id').value.trim();
-  const track_num=document.getElementById('new_track_num').value.trim();
+  const order_id=document.getElementById('new_order_id').value.trim(), track_num=document.getElementById('new_track_num').value.trim();
   if(!order_id||!track_num) return showToast('Заполни все поля','err');
-  try {
-    await apiPost(`tracks/${CLIENT_ID}`,{order_id,track_num});
-    // Сохраняем выбранный сайт трекинга в настройки
-    await apiPost(`settings/${CLIENT_ID}`,{tracking_site: selectedSite});
-    tracks.push({order_id,track_num}); renderTracks();
-    document.getElementById('new_order_id').value='';
-    document.getElementById('new_track_num').value='';
-    showToast('Трек добавлен!');
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка','err'); }
+  try { await apiPost('tracks/'+CLIENT_ID,{order_id,track_num}); tracks.push({order_id,track_num}); renderTracks(); document.getElementById('new_order_id').value=''; document.getElementById('new_track_num').value=''; showToast('Трек добавлен!'); tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка','err'); }
 }
 
-// ── FAQ ──
+const SUGGESTED_FAQ=[
+  {question:'Как скачать приложение?',answer:'Для оформления заказа приложение не требуется. Просто напишите нам в бот или менеджеру.'},
+  {question:'Как оформить заказ?',answer:'Отправьте менеджеру ссылку на товар или скриншот, укажите размер и количество. Менеджер рассчитает стоимость и оформит заказ.'},
+  {question:'Доставка и комиссия',answer:'Мы предлагаем несколько вариантов доставки. Используйте калькулятор в боте чтобы рассчитать точную стоимость для вашего товара.'},
+  {question:'Экспресс доставка',answer:'Экспресс доставка занимает 5-7 дней. Стоимость выше стандартной, но товар придёт значительно быстрее.'},
+];
+
 function renderFaqItems() {
   const el=document.getElementById('faq-list');
   if(!faqItems.length){el.innerHTML='<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>';return;}
-  el.innerHTML=faqItems.map((item,i)=>`
-    <div class="faq-item">
-      <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
-      <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div>
-      <input type="text" placeholder="Вопрос..." value="${esc(item.question)}" oninput="faqItems[${i}].question=this.value">
-      <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
-    </div>`).join('');
+  el.innerHTML=faqItems.map((item,i)=>`<div class="faq-item"><div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span><button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div><input type="text" placeholder="Вопрос..." value="${esc(item.question)}" oninput="faqItems[${i}].question=this.value"><textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea></div>`).join('');
 }
-const SUGGESTED_FAQ = [
-  {question:'Как скачать приложение?', answer:'Для оформления заказа приложение не требуется. Просто напишите нам в бот или менеджеру.'},
-  {question:'Как оформить заказ?', answer:'Отправьте менеджеру ссылку на товар или скриншот, укажите размер и количество. Менеджер рассчитает стоимость и оформит заказ.'},
-  {question:'Доставка и комиссия', answer:'Мы предлагаем несколько вариантов доставки. Используйте калькулятор в боте чтобы рассчитать точную стоимость для вашего товара.'},
-  {question:'Экспресс доставка', answer:'Экспресс доставка занимает 5-7 дней. Стоимость выше стандартной, но товар придёт значительно быстрее.'},
-];
-
 function renderSuggested() {
-  const el = document.getElementById('suggested-list');
-  const usedQuestions = faqItems.map(f => f.question);
-  const available = SUGGESTED_FAQ.filter(s => !usedQuestions.includes(s.question));
-  if (!available.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Все вопросы добавлены ✅</div>';
-    return;
-  }
-  el.innerHTML = available.map(s =>
-    \`<button class="btn-suggest" onclick="addSuggestedFaq(\\`\${esc(s.question)}\\`, \\`\${esc(s.answer)}\\`)">➕ \${s.question}</button>\`
-  ).join('');
+  const el=document.getElementById('suggested-list'); if(!el) return;
+  const used=faqItems.map(f=>f.question), avail=SUGGESTED_FAQ.filter(s=>!used.includes(s.question));
+  if(!avail.length){el.innerHTML='<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Все вопросы добавлены ✅</div>';return;}
+  el.innerHTML=avail.map(s=>`<button class="btn-suggest" onclick="addSuggestedFaq('${esc(s.question)}','${esc(s.answer)}')">➕ ${s.question}</button>`).join('');
 }
-function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); renderSuggested(); }
-function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); renderSuggested(); }
-function addSuggestedFaq(question, answer) {
-  faqItems.push({question, answer}); renderFaqItems(); renderSuggested();
-  showToast('Вопрос добавлен!');
-  tg.HapticFeedback.impactOccurred('light');
-}
-async function saveFaq() {
-  try {
-    await apiPost(`faq/${CLIENT_ID}`,faqItems);
-    showToast('FAQ сохранён!');
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка','err'); }
+function addFaqItem(){faqItems.push({question:'',answer:''});renderFaqItems();renderSuggested();}
+function removeFaqItem(i){faqItems.splice(i,1);renderFaqItems();renderSuggested();}
+function addSuggestedFaq(q,a){faqItems.push({question:q,answer:a});renderFaqItems();renderSuggested();showToast('Вопрос добавлен!');tg.HapticFeedback.impactOccurred('light');}
+async function saveFaq(){try{await apiPost('faq/'+CLIENT_ID,faqItems);showToast('FAQ сохранён!');tg.HapticFeedback.notificationOccurred('success');}catch{showToast('Ошибка','err');}}
+
+async function saveGeneral(){
+  try{await apiPost('settings/'+CLIENT_ID,{manager_link:document.getElementById('manager_link').value.trim(),channel_link:document.getElementById('channel_link').value.trim(),welcome_text:document.getElementById('welcome_text').value.trim()});showToast('Настройки сохранены!');tg.HapticFeedback.notificationOccurred('success');}
+  catch{showToast('Ошибка','err');}
 }
 
-// ── Общее ──
-async function saveGeneral() {
-  try {
-    await apiPost(`settings/${CLIENT_ID}`,{
-      manager_link: document.getElementById('manager_link').value.trim(),
-      channel_link: document.getElementById('channel_link').value.trim(),
-      welcome_text: document.getElementById('welcome_text').value.trim(),
-    });
-    showToast('Настройки сохранены!');
-    tg.HapticFeedback.notificationOccurred('success');
-  } catch { showToast('Ошибка','err'); }
-}
-
-function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(str){return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 </script>
 </body>
 </html>
