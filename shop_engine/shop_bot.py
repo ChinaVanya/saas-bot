@@ -159,42 +159,44 @@ async def recognize_photo(photo_bytes: bytes, api_key: str) -> str | None:
         return None
 
 
-async def get_aftership_status(track_num: str, api_key: str) -> list:
-    """Получает последние 3 события посылки через AfterShip API."""
+async def get_track24_status(track_num: str, api_key: str) -> list:
+    """Получает последние 3 события посылки через Track24 API.
+    api_key формат: 'ключ|домен' например 'abc123|mysite.ru'
+    """
+    parts = api_key.strip().split("|")
+    key = parts[0].strip()
+    domain = parts[1].strip() if len(parts) > 1 else "track24.ru"
+
+    url = "https://api.track24.ru/tracking.json.php"
+    params = {"apikey": key, "domain": domain, "code": track_num, "pretty": "true"}
+
     try:
         async with aiohttp.ClientSession() as session:
-            # Сначала добавляем трекинг
-            await session.post(
-                "https://api.aftership.com/v4/trackings",
-                headers={
-                    "aftership-api-key": api_key.strip(),
-                    "Content-Type": "application/json"
-                },
-                json={"tracking": {"tracking_number": track_num}},
-                timeout=aiohttp.ClientTimeout(total=10)
-            )
-            # Получаем данные
             async with session.get(
-                f"https://api.aftership.com/v4/trackings/{track_num}",
-                headers={"aftership-api-key": api_key.strip()},
-                timeout=aiohttp.ClientTimeout(total=10)
+                url, params=params,
+                timeout=aiohttp.ClientTimeout(total=15)
             ) as resp:
+                print(f"Track24 API status: {resp.status}, url: {resp.url}")
+                raw = await resp.text()
+                print(f"Track24 response: {raw[:300]}")
                 if resp.status != 200:
-                    print(f"AfterShip error: {resp.status}")
                     return []
-                data = await resp.json()
-                checkpoints = data.get("data", {}).get("tracking", {}).get("checkpoints", [])
-                # Берём последние 3 события
+                data = await resp.json(content_type=None)
+                if data.get("status") != "ok":
+                    print(f"Track24 error: {data.get('message', 'unknown')}")
+                    return []
+                events = data.get("data", {}).get("events", [])
                 result = []
-                for cp in reversed(checkpoints[-3:]):
-                    date = cp.get("checkpoint_time", "")[:10]
-                    time = cp.get("checkpoint_time", "")[11:16]
-                    location = cp.get("city") or cp.get("location") or cp.get("country_name", "")
-                    message = cp.get("message", "")
-                    result.append(f"📍 <b>{location}</b> {date} {time}\n{message}")
+                for ev in events[:3]:
+                    dt = ev.get("operationDateTime", "")
+                    date = dt[:10] if len(dt) >= 10 else dt
+                    time_str = dt[11:16] if len(dt) >= 16 else ""
+                    place = ev.get("operationPlaceName", "")
+                    action = ev.get("operationAttribute", ev.get("operationType", ""))
+                    result.append(f"📍 <b>{place}</b> — {date} {time_str}\n{action}")
                 return result
     except Exception as e:
-        print(f"AfterShip error: {e}")
+        print(f"Track24 API error: {type(e).__name__}: {e}")
         return []
 
 
@@ -411,7 +413,7 @@ def make_shop_dispatcher(client_id: int):
         # Если есть AfterShip API — показываем статус
         if api_key and site == "track24api":
             msg = await message.answer("🔍 Запрашиваем статус посылки...")
-            events = await get_track24_api_status(track, api_key)
+            events = await get_track24_status(track, api_key)
             if events:
                 text = (
                     f"📦 <b>Заказ {order_id}</b>\n"
