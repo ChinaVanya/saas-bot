@@ -238,11 +238,11 @@
 
     <!-- РЕЖИМ ТАРИФОВ -->
     <div class="tariff-mode-bar">
-      <div id="tariffModeBadges" style="display:flex;gap:8px;flex:1;align-items:stretch;height:40px;">
-        <span class="tariff-badge normal" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;height:40px;">📦 Обычный</span>
-        <span class="tariff-badge express" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;height:40px;">⚡ Экспресс</span>
+      <div id="tariffModeBadges" style="display:flex;gap:8px;flex:1;align-items:stretch;">
+        <span class="tariff-badge normal" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;">📦 Обычный</span>
+<span class="tariff-badge express" style="flex:1;display:flex;align-items:center;justify-content:center;font-size:13px;border-radius:8px;">⚡ Экспресс</span>
       </div>
-      <button class="tariff-mode-btn" onclick="switchTariffMode()" style="font-size:20px;padding:0 16px;margin-left:10px;height:40px;width:40px;">⇄</button>
+      <button class="tariff-mode-btn" onclick="switchTariffMode()" style="font-size:20px;padding:0 16px;margin-left:10px;align-self:stretch;min-width:44px;">⇄</button>
     </div>
 
     <!-- ТАРИФЫ -->
@@ -261,7 +261,7 @@
           <div class="tariff-field"><input type="number" id="normal_percent_display" placeholder="8" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
           <div class="tariff-field"><input type="number" id="normal_per_kg" placeholder="200" step="10" oninput="updatePreview()"><small><span class="per-kg-label">₽</span> за кг</small></div>
         </div>
-        <div class="tariff-info" id="tinfo-normal"><b>📦 Обычная доставка (35-50 дней)</b><br>Самый дешёвый вариант.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
+        <div class="tariff-info" id="tinfo-normal"><b>📦 Обычная доставка </b><br>Самый дешёвый вариант.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
       </div>
 
       <div class="tariff-block" id="block-express">
@@ -276,7 +276,7 @@
           <div class="tariff-field"><input type="number" id="express_percent_display" placeholder="25" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
           <div class="tariff-field"><input type="number" id="express_per_kg" placeholder="1200" step="10" oninput="updatePreview()"><small><span class="per-kg-label">₽</span> за кг</small></div>
         </div>
-        <div class="tariff-info" id="tinfo-express"><b>⚡ Экспресс (5-7 дней)</b><br>Самый быстрый.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
+        <div class="tariff-info" id="tinfo-express"><b>⚡ Экспресс </b><br>Самый быстрый.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
       </div>
 
       <div class="tariff-block" id="block-truck">
@@ -291,7 +291,7 @@
           <div class="tariff-field"><input type="number" id="truck_percent_display" placeholder="11" step="0.1" oninput="updatePreview()"><small>Комиссия %</small></div>
           <div class="tariff-field"><input type="number" id="truck_per_kg" placeholder="350" step="10" oninput="updatePreview()"><small><span class="per-kg-label">₽</span> за кг</small></div>
         </div>
-        <div class="tariff-info" id="tinfo-truck"><b>🚛 Автодоставка (25-40 дней)</b><br>Баланс цены и скорости.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
+        <div class="tariff-info" id="tinfo-truck"><b>🚛 Автодоставка </b><br>Баланс цены и скорости.<br><br><b>Для покупателя:</b> получит трек-номер и ссылку для отслеживания.</div>
       </div>
 
       <div class="tariff-block" id="block-air">
