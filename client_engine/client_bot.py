@@ -10,10 +10,14 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from client_config import CLIENT_TOKENS, MINI_APP_URL
+from database.db import get_client_by_code_and_username, get_conn
 
 
 def panel_kb(client_type='cargo') -> InlineKeyboardMarkup:
-    url = MINI_APP_URL if client_type == 'cargo' else MINI_APP_URL.replace('/app', '/shop')
+    if client_type == 'shop':
+        url = MINI_APP_URL.replace('/app', '/shop')
+    else:
+        url = MINI_APP_URL
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text="⚙️ Открыть панель управления",
@@ -29,14 +33,18 @@ def make_dispatcher():
     async def cmd_start(message: Message):
         await message.answer(
             "👋 Добро пожаловать!\n\nНажмите кнопку ниже чтобы войти в панель управления:",
-            reply_markup=panel_kb()
+            reply_markup=ReplyKeyboardRemove()
+        )
+        await message.answer(
+            "⚙️ Войти в панель:",
+            reply_markup=panel_kb('cargo')
         )
 
     @dp.message(F.text)
     async def any_message(message: Message):
         await message.answer(
             "Используйте кнопку ниже:",
-            reply_markup=panel_kb()
+            reply_markup=panel_kb('cargo')
         )
 
     return dp
@@ -48,7 +56,7 @@ async def main():
     for token in CLIENT_TOKENS:
         bot_instance = Bot(token=token)
         tasks.append(dp.start_polling(bot_instance))
-    print(f"🤖 Запущено {len(tasks)} клиентских ботов")
+    print(f"🤖 Запущено {len(CLIENT_TOKENS)} клиентских ботов")
     await asyncio.gather(*tasks)
 
 

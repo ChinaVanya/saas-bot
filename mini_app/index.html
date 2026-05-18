@@ -606,6 +606,17 @@ async function doLogin() {
     if(!r.ok||!data.client_id){err.textContent='❌ '+(data.detail||'Неверный код');btn.disabled=false;btn.textContent='Войти в панель';return;}
     CLIENT_ID=data.client_id;
     const botName=data.bot_name||'Мой магазин';
+    const clientType=data.client_type||'cargo';
+    // Если личный магазин — переходим на shop.html
+    if(clientType==='shop'){
+      const authData=JSON.stringify({cid:CLIENT_ID,botName,
+        code:document.getElementById('codeInput').value.trim().toUpperCase(),
+        token:document.getElementById('tokenInput').value.trim(),
+        remember:rememberMe});
+      try{localStorage.setItem('shop_auth_transfer',authData);}catch{}
+      window.location.href='/shop';
+      return;
+    }
     document.getElementById('botName').textContent=botName;
     saveSession(CLIENT_ID,botName);
     await loadAll();

@@ -391,6 +391,24 @@ function getSession() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+  // Проверяем передачу авторизации из index.html
+  try {
+    const transfer = localStorage.getItem('shop_auth_transfer');
+    if (transfer) {
+      localStorage.removeItem('shop_auth_transfer');
+      const d = JSON.parse(transfer);
+      CLIENT_ID = d.cid;
+      rememberMe = d.remember || false;
+      document.getElementById('shopName').textContent = d.botName || 'Магазин';
+      if (rememberMe) {
+        localStorage.setItem(SKEY, JSON.stringify({cid:d.cid,botName:d.botName,code:d.code,token:d.token,exp:Date.now()+7*864e5}));
+      }
+      await loadAll();
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+      return;
+    }
+  } catch {}
   try {
     const s = getSession();
     if (s) {
@@ -399,6 +417,7 @@ window.addEventListener('DOMContentLoaded', async () => {
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainScreen').style.display = 'block';
+    }
     }
   } catch { localStorage.removeItem(SKEY); }
 });
