@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Панель магазина</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  :root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#22222f;--border:#2e2e3e;--accent:#6c63ff;--accent2:#a78bfa;--green:#22c55e;--red:#ef4444;--text:#f0f0f5;--muted:#7070a0;--radius:14px;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+  .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 24px;}
+  .login-logo{font-size:48px;margin-bottom:20px;}
+  .login-title{font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;}
+  .login-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;}
+  .login-hint{font-size:12px;color:var(--muted);text-align:left;width:100%;margin-bottom:6px;padding-left:4px;}
+  .login-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;color:var(--text);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-align:center;outline:none;margin-bottom:12px;text-transform:uppercase;transition:border-color .2s;}
+  .login-input.token-input{text-transform:none;font-size:13px;letter-spacing:0;font-weight:500;}
+  .login-input:focus{border-color:var(--accent);}
+  .login-input::placeholder{letter-spacing:0;font-weight:400;font-size:13px;color:var(--muted);text-transform:none;}
+  .login-btn{width:100%;padding:16px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(108,99,255,.4);transition:all .2s;margin-top:4px;}
+  .login-btn:active{transform:scale(.97);}
+  .login-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .login-error{margin-top:12px;color:var(--red);font-size:13px;font-weight:600;text-align:center;min-height:20px;}
+  .remember-row{display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer;width:100%;}
+  .custom-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+  .custom-checkbox.checked{background:var(--accent);border-color:var(--accent);}
+  .custom-checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
+  .remember-label{font-size:13px;color:var(--muted);}
+  .main-screen{display:none;padding-bottom:80px;}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-size:18px;font-weight:800;}
+  .logo span{color:var(--accent2);}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+  .tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin:16px 20px 0;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:1;min-width:fit-content;padding:8px 6px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(108,99,255,.4);}
+  .page{display:none;padding:20px;}
+  .page.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .card-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  .field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;}
+  .field input:focus,.field textarea:focus{border-color:var(--accent);}
+  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(108,99,255,.35);}
+  .btn-primary:active{transform:scale(.97);}
+  .btn-sm{width:auto;padding:8px 14px;font-size:13px;border-radius:8px;}
+  .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+  .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  /* КАТАЛОГ */
+  .product-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+  .product-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+  .product-name{font-size:14px;font-weight:700;}
+  .product-price{font-size:14px;font-weight:800;color:var(--accent2);}
+  .product-desc{font-size:12px;color:var(--muted);margin-bottom:8px;}
+  .product-img{width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:none;}
+  .product-img.show{display:block;}
+  .product-actions{display:flex;gap:8px;}
+  .img-upload-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .img-preview{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);display:none;}
+  .img-preview.show{display:block;}
+  .img-upload-btn{flex:1;padding:9px;background:var(--bg);border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;}
+  .img-remove{background:rgba(239,68,68,.15);border:none;border-radius:6px;color:var(--red);font-size:12px;cursor:pointer;padding:6px 8px;}
+  /* ПРОМО */
+  .promo-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+  .promo-code{font-size:14px;font-weight:700;}
+  .promo-discount{font-size:12px;font-weight:600;color:var(--green);background:rgba(34,197,94,.12);border-radius:6px;padding:3px 8px;margin-right:10px;}
+  .promo-right{display:flex;align-items:center;gap:8px;}
+  /* FAQ */
+  .faq-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+  .faq-item input,.faq-item textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;outline:none;margin-bottom:8px;resize:none;}
+  .faq-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .faq-num{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+  /* ТАРИФЫ */
+  .tariff-block{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+  .tariff-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tariff-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:4px;transition:border-color .2s;}
+  .tariff-field input:focus{border-color:var(--accent);}
+  .tariff-field small{display:block;font-size:10px;color:var(--muted);}
+  .tariff-label{font-size:13px;font-weight:700;margin-bottom:12px;}
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.ok{border-color:var(--green);color:var(--green);}
+  .toast.err{border-color:var(--red);color:var(--red);}
+  .empty{text-align:center;padding:30px 0;color:var(--muted);font-size:14px;}
+  .empty-icon{font-size:32px;margin-bottom:8px;}
+  .row{display:flex;gap:10px;}
+  .row .field{flex:1;margin-bottom:0;}
+  .section-gap{margin-top:16px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-logo">🛍</div>
+  <div class="login-title">Панель магазина</div>
+  <div class="login-subtitle">Введите код доступа и токен вашего бота</div>
+  <div class="login-hint">Код доступа</div>
+  <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
+  <div class="login-hint">Токен бота (от @BotFather)</div>
+  <input class="login-input token-input" id="tokenInput" type="text" placeholder="123456789:ABC-DEF...">
+  <button class="login-btn" id="loginBtn" onclick="doLogin()">Войти в панель</button>
+  <div class="remember-row" onclick="toggleRemember()">
+    <div class="custom-checkbox" id="rememberBox"></div>
+    <span class="remember-label">Запомнить меня на 7 дней</span>
+  </div>
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main-screen" id="mainScreen">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Shop<span>Panel</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
+        <div class="status-dot"></div><span>Онлайн</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('catalog')">🛍 Каталог</button>
+    <button class="tab" onclick="switchTab('delivery')">🚚 Доставка</button>
+    <button class="tab" onclick="switchTab('promos')">🎟 Промокоды</button>
+    <button class="tab" onclick="switchTab('faq')">❓ Вопросы</button>
+  </div>
+
+  <!-- КАТАЛОГ -->
+  <div class="page active" id="page-catalog">
+    <div class="card">
+      <div class="card-title">Добавить товар</div>
+      <div class="field"><label>Название товара</label><input type="text" id="new_product_name" placeholder="Кроссовки Nike Air Max"></div>
+      <div class="field"><label>Цена</label><input type="text" id="new_product_price" placeholder="5990 ₽"></div>
+      <div class="field"><label>Описание</label><textarea id="new_product_desc" rows="2" placeholder="Краткое описание товара..."></textarea></div>
+      <div class="img-upload-row">
+        <img id="new_product_img_preview" class="img-preview" src="">
+        <div class="img-upload-btn" onclick="document.getElementById('new_product_img_file').click()">📷 Фото товара</div>
+        <button class="img-remove" id="new_product_img_remove" onclick="removeNewProductImg()" style="display:none">✕</button>
+        <input type="file" id="new_product_img_file" accept="image/*" style="display:none" onchange="handleNewProductImg(this)">
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="addProduct()">Добавить товар</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Товары в каталоге</div>
+      <div id="products-list"><div class="empty"><div class="empty-icon">🛍</div>Товаров нет</div></div>
+    </div>
+  </div>
+
+  <!-- ДОСТАВКА -->
+  <div class="page" id="page-delivery">
+    <div class="card">
+      <div class="card-title">Настройки доставки</div>
+      <div class="tariff-block">
+        <div class="tariff-label">🚚 Стандартная доставка</div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="delivery_price" placeholder="350"><small>Цена (₽)</small></div>
+          <div class="tariff-field"><input type="number" id="delivery_days" placeholder="7"><small>Дней</small></div>
+        </div>
+      </div>
+      <div class="tariff-block">
+        <div class="tariff-label">⚡ Экспресс доставка</div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="express_price" placeholder="700"><small>Цена (₽)</small></div>
+          <div class="tariff-field"><input type="number" id="express_days" placeholder="2"><small>Дней</small></div>
+        </div>
+      </div>
+      <div class="tariff-block">
+        <div class="tariff-label">🆓 Бесплатная доставка от суммы</div>
+        <div class="field" style="margin-bottom:0;"><input type="number" id="free_delivery_from" placeholder="5000 (0 = отключено)"></div>
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="saveDelivery()">Сохранить доставку</button>
+    </div>
+  </div>
+
+  <!-- ПРОМОКОДЫ -->
+  <div class="page" id="page-promos">
+    <div class="card">
+      <div class="card-title">Добавить промокод</div>
+      <div class="row">
+        <div class="field"><label>Код</label><input type="text" id="new_promo_code" placeholder="SALE20" style="text-transform:uppercase"></div>
+        <div class="field"><label>Скидка %</label><input type="number" id="new_promo_discount" placeholder="20" min="1" max="99"></div>
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="addPromo()">Добавить промокод</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Активные промокоды</div>
+      <div id="promos-list"></div>
+    </div>
+  </div>
+
+  <!-- ВОПРОСЫ -->
+  <div class="page" id="page-faq">
+    <div class="card">
+      <div class="card-title">Вопросы и ответы</div>
+      <div id="faq-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:8px">+ Добавить вопрос</button>
+    </div>
+    <button class="btn btn-primary" onclick="saveFaq()">Сохранить</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+const INIT_DATA = tg.initData || 'dev';
+const API = '';
+const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
+const SKEY = 'shop_' + TG_USERNAME;
+
+let CLIENT_ID = null, settings = {}, promos = [], faqItems = [];
+let rememberMe = false;
+let products = [];
+let newProductImg = '';
+
+function toggleRemember() {
+  rememberMe = !rememberMe;
+  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe?' checked':'');
+}
+
+function saveSession(cid, botName) {
+  if (!rememberMe) return;
+  try {
+    localStorage.setItem(SKEY, JSON.stringify({
+      cid, botName,
+      code: document.getElementById('codeInput').value.trim().toUpperCase(),
+      token: document.getElementById('tokenInput').value.trim(),
+      exp: Date.now() + 7*864e5
+    }));
+  } catch {}
+}
+
+function getSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SKEY));
+    if (!d || Date.now() > d.exp) { localStorage.removeItem(SKEY); return null; }
+    return d;
+  } catch { return null; }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const s = getSession();
+    if (s) {
+      CLIENT_ID = s.cid;
+      await loadAll();
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+    }
+  } catch { localStorage.removeItem(SKEY); }
+});
+
+document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
+document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+
+async function doLogin() {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const token = document.getElementById('tokenInput').value.trim();
+  const err = document.getElementById('loginError');
+  if (!code || !token) { err.textContent = '❌ Заполните оба поля'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
+  try {
+    const r = await fetch(API+'/api/auth', {
+      method:'POST', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},
+      body: JSON.stringify({code, username:TG_USERNAME, token})
+    });
+    const data = await r.json();
+    if (!r.ok || !data.client_id) {
+      err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
+      btn.disabled = false; btn.textContent = 'Войти в панель'; return;
+    }
+    CLIENT_ID = data.client_id;
+    saveSession(CLIENT_ID, data.bot_name || 'Мой магазин');
+    await loadAll();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch {
+    err.textContent = '❌ Ошибка соединения';
+    btn.disabled = false; btn.textContent = 'Войти в панель';
+  }
+}
+
+function switchTab(name) {
+  const pages = ['catalog','delivery','promos','faq'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+}
+
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='ok'?'✅ ':'❌ ') + msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className='toast', 2500);
+}
+
+async function apiGet(p) { const r = await fetch(API+'/api/'+p,{headers:{'x-init-data':INIT_DATA}}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+
+async function loadAll() {
+  const [s, p] = await Promise.all([
+    apiGet('settings/'+CLIENT_ID),
+    apiGet('promos/'+CLIENT_ID),
+  ]);
+  settings = s; promos = p.promos;
+  try { faqItems = JSON.parse(settings.faq_json||'[]'); } catch { faqItems = []; }
+  try { products = JSON.parse(settings.shop_products||'[]'); } catch { products = []; }
+
+  renderPromos(); renderFaqItems(); renderProducts();
+
+  // Fill delivery
+  document.getElementById('delivery_price').value = settings.shop_delivery_price || '';
+  document.getElementById('delivery_days').value = settings.shop_delivery_days || '';
+  document.getElementById('express_price').value = settings.shop_express_price || '';
+  document.getElementById('express_days').value = settings.shop_express_days || '';
+  document.getElementById('free_delivery_from').value = settings.shop_free_from || '';
+}
+
+// ── Каталог ──
+function handleNewProductImg(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    newProductImg = e.target.result;
+    const prev = document.getElementById('new_product_img_preview');
+    prev.src = newProductImg; prev.classList.add('show');
+    document.getElementById('new_product_img_remove').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeNewProductImg() {
+  newProductImg = '';
+  const prev = document.getElementById('new_product_img_preview');
+  prev.src = ''; prev.classList.remove('show');
+  document.getElementById('new_product_img_remove').style.display = 'none';
+  document.getElementById('new_product_img_file').value = '';
+}
+
+async function addProduct() {
+  const name = document.getElementById('new_product_name').value.trim();
+  const price = document.getElementById('new_product_price').value.trim();
+  const desc = document.getElementById('new_product_desc').value.trim();
+  if (!name || !price) return showToast('Введи название и цену', 'err');
+  products.push({name, price, desc, img: newProductImg, id: Date.now()});
+  await saveProducts();
+  renderProducts();
+  document.getElementById('new_product_name').value = '';
+  document.getElementById('new_product_price').value = '';
+  document.getElementById('new_product_desc').value = '';
+  removeNewProductImg();
+  showToast('Товар добавлен!');
+  tg.HapticFeedback.notificationOccurred('success');
+}
+
+async function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  await saveProducts();
+  renderProducts();
+  showToast('Товар удалён');
+}
+
+async function saveProducts() {
+  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
+}
+
+function renderProducts() {
+  const el = document.getElementById('products-list');
+  if (!products.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🛍</div>Товаров нет</div>'; return; }
+  el.innerHTML = products.map(p => `
+    <div class="product-item">
+      ${p.img ? `<img src="${p.img}" class="product-img show">` : ''}
+      <div class="product-header">
+        <span class="product-name">${esc(p.name)}</span>
+        <span class="product-price">${esc(p.price)}</span>
+      </div>
+      ${p.desc ? `<div class="product-desc">${esc(p.desc)}</div>` : ''}
+      <div class="product-actions">
+        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑 Удалить</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Доставка ──
+async function saveDelivery() {
+  try {
+    await apiPost('settings/'+CLIENT_ID, {
+      shop_delivery_price: parseFloat(document.getElementById('delivery_price').value)||0,
+      shop_delivery_days: parseInt(document.getElementById('delivery_days').value)||0,
+      shop_express_price: parseFloat(document.getElementById('express_price').value)||0,
+      shop_express_days: parseInt(document.getElementById('express_days').value)||0,
+      shop_free_from: parseFloat(document.getElementById('free_delivery_from').value)||0,
+    });
+    showToast('Доставка сохранена!');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+
+// ── Промокоды ──
+function renderPromos() {
+  const el = document.getElementById('promos-list');
+  if (!promos.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>'; return; }
+  el.innerHTML = promos.map(p => `
+    <div class="promo-item">
+      <span class="promo-code">${p.code}</span>
+      <div class="promo-right"><span class="promo-discount">-${p.discount}%</span>
+      <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div>
+    </div>`).join('');
+}
+async function addPromo() {
+  const code = document.getElementById('new_promo_code').value.trim().toUpperCase();
+  const discount = parseInt(document.getElementById('new_promo_discount').value);
+  if (!code || !discount) return showToast('Заполни код и скидку', 'err');
+  try {
+    await apiPost('promos/'+CLIENT_ID, {code, discount});
+    promos.push({code, discount}); renderPromos();
+    document.getElementById('new_promo_code').value = '';
+    document.getElementById('new_promo_discount').value = '';
+    showToast('Промокод добавлен!');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+async function deletePromo(code) {
+  try {
+    await apiDelete('promos/'+CLIENT_ID, {code});
+    promos = promos.filter(p => p.code !== code); renderPromos();
+    showToast('Промокод удалён');
+  } catch { showToast('Ошибка', 'err'); }
+}
+
+// ── FAQ ──
+function renderFaqItems() {
+  const el = document.getElementById('faq-list');
+  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">❓</div>Вопросов нет</div>'; return; }
+  el.innerHTML = faqItems.map((item,i) => `
+    <div class="faq-item">
+      <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div>
+      <input type="text" placeholder="Вопрос..." value="${esc(item.question)}" oninput="faqItems[${i}].question=this.value">
+      <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
+    </div>`).join('');
+}
+function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); }
+function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); }
+async function saveFaq() {
+  try {
+    await apiPost('faq/'+CLIENT_ID, faqItems);
+    showToast('FAQ сохранён!');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+
+function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+</script>
+</body>
+</html>

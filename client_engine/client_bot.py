@@ -12,11 +12,12 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from client_config import CLIENT_TOKENS, MINI_APP_URL
 
 
-def panel_kb() -> InlineKeyboardMarkup:
+def panel_kb(client_type='cargo') -> InlineKeyboardMarkup:
+    url = MINI_APP_URL if client_type == 'cargo' else MINI_APP_URL.replace('/app', '/shop')
     return InlineKeyboardMarkup(inline_keyboard=[[
         InlineKeyboardButton(
             text="⚙️ Открыть панель управления",
-            web_app=WebAppInfo(url=MINI_APP_URL)
+            web_app=WebAppInfo(url=url)
         )
     ]])
 

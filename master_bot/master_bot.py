@@ -81,13 +81,34 @@ async def cb_list_clients(callback, state: FSMContext):
 async def cb_add_client(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
-    await state.set_state(RegisterStates.username)
+    await state.set_state(RegisterStates.client_type)
+    from aiogram.utils.keyboard import InlineKeyboardBuilder as IKB
+    kb = IKB()
+    kb.button(text="📦 Посредник (карго)", callback_data="type_cargo")
+    kb.button(text="🛍 Личный магазин", callback_data="type_shop")
+    kb.adjust(1)
     await callback.message.answer(
-        "➕ <b>Регистрация клиента</b>\n\n<b>Шаг 1/3.</b> Введи @username клиента:",
-        parse_mode="HTML"
+        "➕ <b>Регистрация клиента</b>\n\n<b>Шаг 1/4.</b> Выбери тип клиента:",
+        parse_mode="HTML",
+        reply_markup=kb.as_markup()
     )
     await callback.answer()
 
+
+
+@dp.callback_query(F.data.startswith("type_"))
+async def reg_type(callback, state: FSMContext):
+    if not is_master(callback.from_user.id):
+        return
+    ctype = callback.data.replace("type_", "")
+    await state.update_data(client_type=ctype)
+    await state.set_state(RegisterStates.username)
+    label = "Посредник (карго)" if ctype == "cargo" else "Личный магазин"
+    await callback.message.answer(
+        f"✅ Тип: <b>{label}</b>\n\n<b>Шаг 2/4.</b> Введи @username клиента:",
+        parse_mode="HTML"
+    )
+    await callback.answer()
 
 @dp.message(RegisterStates.username)
 async def reg_username(message: Message, state: FSMContext):
@@ -97,7 +118,7 @@ async def reg_username(message: Message, state: FSMContext):
         return
     await state.update_data(username=username)
     await state.set_state(RegisterStates.bot_name)
-    await message.answer("<b>Шаг 2/3.</b> Введи название магазина клиента:", parse_mode="HTML")
+    await message.answer("<b>Шаг 3/4.</b> Введи название магазина клиента:", parse_mode="HTML")
 
 
 @dp.message(RegisterStates.bot_name)
@@ -105,7 +126,7 @@ async def reg_bot_name(message: Message, state: FSMContext):
     await state.update_data(bot_name=message.text.strip())
     await state.set_state(RegisterStates.access_code)
     await message.answer(
-        "<b>Шаг 3/3.</b> Придумай код доступа\n"
+        "<b>Шаг 4/4.</b> Придумай код доступа\n"
         "Например: <code>SHOP2024</code>",
         parse_mode="HTML"
     )
@@ -116,11 +137,13 @@ async def reg_access_code(message: Message, state: FSMContext):
     code = message.text.strip().upper()
     data = await state.get_data()
     # Токен пустой — клиент введёт его сам в Mini App
+    ctype = data.get('client_type', 'cargo')
     success = await add_client(
         username=data["username"],
         access_code=code,
-        bot_token=f"pending_{data['username']}",  # временный placeholder
-        bot_name=data["bot_name"]
+        bot_token=f"pending_{data['username']}",
+        bot_name=data["bot_name"],
+        client_type=ctype
     )
     await state.clear()
     if success:
@@ -128,6 +151,7 @@ async def reg_access_code(message: Message, state: FSMContext):
             f"✅ <b>Клиент зарегистрирован!</b>\n\n"
             f"👤 Username: @{data['username']}\n"
             f"🏪 Магазин: {data['bot_name']}\n"
+            f"📋 Тип: {'📦 Посредник' if data.get('client_type','cargo')=='cargo' else '🛍 Личный магазин'}\n"
             f"🔑 Код доступа: <code>{code}</code>\n\n"
             f"📲 Клиент открывает @pandatest15_bot → вводит код → "
             f"вводит токен своего бота → настраивает всё в Mini App.",

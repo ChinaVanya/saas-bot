@@ -21,9 +21,16 @@ async def init_db():
             bot_token   TEXT UNIQUE NOT NULL,
             bot_name    TEXT,
             created_at  TIMESTAMP DEFAULT NOW(),
-            is_active   INTEGER DEFAULT 1
+            is_active   INTEGER DEFAULT 1,
+            client_type TEXT DEFAULT 'cargo'
         )
     """)
+
+    # Add client_type if missing
+    try:
+        await conn.execute("ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_type TEXT DEFAULT 'cargo'")
+    except:
+        pass
 
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS bot_settings (
@@ -79,6 +86,12 @@ async def init_db():
         ("express_percent", "REAL DEFAULT 0.25"),
         ("express_per_kg",  "REAL DEFAULT 1200"),
         ("tariff_enabled",  "TEXT DEFAULT '{}'"),
+        ("shop_products",    "TEXT DEFAULT '[]'" ),
+        ("shop_delivery_price", "REAL DEFAULT 350"),
+        ("shop_delivery_days",  "INTEGER DEFAULT 7"),
+        ("shop_express_price",  "REAL DEFAULT 700"),
+        ("shop_express_days",   "INTEGER DEFAULT 2"),
+        ("shop_free_from",      "REAL DEFAULT 0"),
     ]
     for col, definition in new_columns:
         try:
@@ -110,12 +123,12 @@ async def init_db():
     print("✅ PostgreSQL база инициализирована")
 
 
-async def add_client(username, access_code, bot_token, bot_name) -> bool:
+async def add_client(username, access_code, bot_token, bot_name, client_type='cargo') -> bool:
     try:
         conn = await get_conn()
         row = await conn.fetchrow(
-            "INSERT INTO clients (username, access_code, bot_token, bot_name) VALUES ($1,$2,$3,$4) RETURNING id",
-            username.lower().lstrip("@"), access_code.upper(), bot_token, bot_name
+            "INSERT INTO clients (username, access_code, bot_token, bot_name, client_type) VALUES ($1,$2,$3,$4,$5) RETURNING id",
+            username.lower().lstrip("@"), access_code.upper(), bot_token, bot_name, client_type
         )
         await conn.execute("INSERT INTO bot_settings (client_id) VALUES ($1)", row["id"])
         await conn.close()
@@ -137,7 +150,7 @@ async def get_client_by_code_and_username(code, username):
 
 async def get_all_clients():
     conn = await get_conn()
-    rows = await conn.fetch("SELECT id, username, bot_name, is_active, created_at FROM clients ORDER BY id DESC")
+    rows = await conn.fetch("SELECT id, username, bot_name, is_active, created_at, client_type FROM clients ORDER BY id DESC")
     await conn.close()
     return [dict(r) for r in rows]
 

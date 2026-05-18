@@ -26,6 +26,7 @@ async def startup():
     await init_db()
 
 app.mount("/app", StaticFiles(directory="mini_app", html=True), name="mini_app")
+app.mount("/shop", StaticFiles(directory="mini_app", html=True), name="shop")
 
 
 class SettingsUpdate(BaseModel):
@@ -56,6 +57,12 @@ class SettingsUpdate(BaseModel):
     msg_calc_img:    Optional[str]   = None
     msg_order_img:   Optional[str]   = None
     msg_support_img: Optional[str]   = None
+    shop_products:      Optional[str]   = None
+    shop_delivery_price: Optional[float] = None
+    shop_delivery_days:  Optional[int]   = None
+    shop_express_price:  Optional[float] = None
+    shop_express_days:   Optional[int]   = None
+    shop_free_from:      Optional[float] = None
 
     class Config:
         # Разрешаем пустые строки
@@ -96,7 +103,7 @@ async def api_auth(body: AuthRequest):
         raise HTTPException(status_code=401, detail="Неверный код или аккаунт не совпадает")
     if body.token and ":" in body.token:
         await update_bot_token(client["id"], body.token)
-    return {"client_id": client["id"], "bot_name": client["bot_name"]}
+    return {"client_id": client["id"], "bot_name": client["bot_name"], "client_type": client.get("client_type", "cargo")}
 
 
 @app.post("/api/token/{client_id}")
@@ -173,7 +180,7 @@ async def api_add_track(client_id: int, body: TrackAdd, x_init_data: str = Heade
 
 @app.post("/api/faq/{client_id}")
 async def api_update_faq(client_id: int, body: List[FaqItem], x_init_data: str = Header(...)):
-    faq_data = [{"question": i.question, "answer": i.answer} for i in body] 
+    faq_data = [{"question": i.question, "answer": i.answer} for i in body]
     faq_json = json.dumps(faq_data, ensure_ascii=False)
     success = await update_settings(client_id, faq_json=faq_json)
     return {"ok": success}
