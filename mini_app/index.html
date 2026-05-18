@@ -609,12 +609,14 @@ async function doLogin() {
     const clientType=data.client_type||'cargo';
     // Если личный магазин — переходим на shop.html
     if(clientType==='shop'){
-      const authData=JSON.stringify({cid:CLIENT_ID,botName,
+      const params=new URLSearchParams({
+        cid:CLIENT_ID,
+        bn:botName,
         code:document.getElementById('codeInput').value.trim().toUpperCase(),
         token:document.getElementById('tokenInput').value.trim(),
-        remember:rememberMe});
-      try{localStorage.setItem('shop_auth_transfer',authData);}catch{}
-      window.location.href='/shop';
+        rem:rememberMe?'1':'0'
+      });
+      window.location.href='/shop?'+params.toString();
       return;
     }
     document.getElementById('botName').textContent=botName;

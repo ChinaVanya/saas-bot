@@ -391,18 +391,22 @@ function getSession() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  // Проверяем передачу авторизации из index.html
+  // Проверяем передачу авторизации из index.html через URL параметры
   try {
-    const transfer = localStorage.getItem('shop_auth_transfer');
-    if (transfer) {
-      localStorage.removeItem('shop_auth_transfer');
-      const d = JSON.parse(transfer);
-      CLIENT_ID = d.cid;
-      rememberMe = d.remember || false;
-      document.getElementById('shopName').textContent = d.botName || 'Магазин';
+    const params = new URLSearchParams(window.location.search);
+    const cid = params.get('cid');
+    if (cid) {
+      CLIENT_ID = parseInt(cid);
+      const botName = params.get('bn') || 'Магазин';
+      const code = params.get('code') || '';
+      const token = params.get('token') || '';
+      rememberMe = params.get('rem') === '1';
+      document.getElementById('shopName').textContent = botName;
       if (rememberMe) {
-        localStorage.setItem(SKEY, JSON.stringify({cid:d.cid,botName:d.botName,code:d.code,token:d.token,exp:Date.now()+7*864e5}));
+        try { localStorage.setItem(SKEY, JSON.stringify({cid:CLIENT_ID,botName,code,token,exp:Date.now()+7*864e5})); } catch {}
       }
+      // Чистим URL
+      window.history.replaceState({}, '', '/shop');
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainScreen').style.display = 'block';
