@@ -92,6 +92,14 @@ async def init_db():
         ("shop_express_price",  "REAL DEFAULT 700"),
         ("shop_express_days",   "INTEGER DEFAULT 2"),
         ("shop_free_from",      "REAL DEFAULT 0"),
+        ("shop_normal_price",   "REAL DEFAULT 350"),
+        ("shop_normal_days",    "INTEGER DEFAULT 14"),
+        ("shop_templates",      "TEXT DEFAULT '[]'"),
+        ("shop_msg_welcome",    "TEXT DEFAULT ''"),
+        ("shop_msg_catalog",    "TEXT DEFAULT ''"),
+        ("shop_msg_delivery",   "TEXT DEFAULT ''"),
+        ("shop_msg_order",      "TEXT DEFAULT ''"),
+        ("shop_msg_support",    "TEXT DEFAULT ''"),
     ]
     for col, definition in new_columns:
         try:

@@ -63,6 +63,14 @@ class SettingsUpdate(BaseModel):
     shop_express_price:  Optional[float] = None
     shop_express_days:   Optional[int]   = None
     shop_free_from:      Optional[float] = None
+    shop_normal_price:   Optional[float] = None
+    shop_normal_days:    Optional[int]   = None
+    shop_templates:      Optional[str]   = None
+    shop_msg_welcome:    Optional[str]   = None
+    shop_msg_catalog:    Optional[str]   = None
+    shop_msg_delivery:   Optional[str]   = None
+    shop_msg_order:      Optional[str]   = None
+    shop_msg_support:    Optional[str]   = None
 
     class Config:
         # Разрешаем пустые строки

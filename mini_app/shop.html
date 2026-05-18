@@ -10,6 +10,8 @@
   :root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#22222f;--border:#2e2e3e;--accent:#6c63ff;--accent2:#a78bfa;--green:#22c55e;--red:#ef4444;--text:#f0f0f5;--muted:#7070a0;--radius:14px;}
   *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
   body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* LOGIN */
   .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 24px;}
   .login-logo{font-size:48px;margin-bottom:20px;}
   .login-title{font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;}
@@ -28,6 +30,8 @@
   .custom-checkbox.checked{background:var(--accent);border-color:var(--accent);}
   .custom-checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
   .remember-label{font-size:13px;color:var(--muted);}
+
+  /* MAIN */
   .main-screen{display:none;padding-bottom:80px;}
   .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
   .header-top{display:flex;align-items:center;justify-content:space-between;}
@@ -46,43 +50,83 @@
   .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
   .field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;}
   .field input:focus,.field textarea:focus{border-color:var(--accent);}
+
+  /* BTNS */
   .btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;}
   .btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(108,99,255,.35);}
   .btn-primary:active{transform:scale(.97);}
   .btn-sm{width:auto;padding:8px 14px;font-size:13px;border-radius:8px;}
   .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
   .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
-  /* КАТАЛОГ */
-  .product-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
-  .product-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
-  .product-name{font-size:14px;font-weight:700;}
-  .product-price{font-size:14px;font-weight:800;color:var(--accent2);}
-  .product-desc{font-size:12px;color:var(--muted);margin-bottom:8px;}
-  .product-img{width:100%;height:120px;object-fit:cover;border-radius:8px;margin-bottom:8px;display:none;}
+  .btn-add-product{width:100%;padding:20px;background:linear-gradient(135deg,rgba(108,99,255,.2),rgba(108,99,255,.05));border:2px dashed rgba(108,99,255,.4);border-radius:var(--radius);color:var(--accent2);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;}
+  .btn-add-product:active{transform:scale(.98);border-color:var(--accent);}
+  .btn-suggest{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;text-align:left;width:100%;margin-bottom:8px;}
+  .btn-suggest:active{background:var(--accent);color:#fff;border-color:var(--accent);}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+  .modal-close{background:var(--surface2);border:none;border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;padding:6px 10px;}
+  .modal input,.modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;margin-bottom:12px;}
+  .modal input:focus,.modal textarea:focus{border-color:var(--accent);}
+  .modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+
+  /* CURRENCY PRICE */
+  .price-row{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:12px;}
+  .price-currency-select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;appearance:none;-webkit-appearance:none;text-align:center;}
+
+  /* TEMPLATE */
+  .template-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
+  .template-item:active{border-color:var(--accent);background:rgba(108,99,255,.1);}
+  .template-name{font-size:13px;font-weight:700;margin-bottom:3px;}
+  .template-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* PRODUCT CARD */
+  .product-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  .product-img{width:100%;height:140px;object-fit:cover;display:none;}
   .product-img.show{display:block;}
-  .product-actions{display:flex;gap:8px;}
-  .img-upload-row{display:flex;align-items:center;gap:8px;margin-top:8px;}
-  .img-preview{width:48px;height:48px;border-radius:8px;object-fit:cover;border:1px solid var(--border);display:none;}
-  .img-preview.show{display:block;}
-  .img-upload-btn{flex:1;padding:9px;background:var(--bg);border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-family:'Manrope',sans-serif;font-size:12px;font-weight:600;cursor:pointer;text-align:center;}
-  .img-remove{background:rgba(239,68,68,.15);border:none;border-radius:6px;color:var(--red);font-size:12px;cursor:pointer;padding:6px 8px;}
-  /* ПРОМО */
+  .product-body{padding:12px;}
+  .product-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+  .product-name{font-size:14px;font-weight:700;flex:1;}
+  .product-price{font-size:15px;font-weight:800;color:var(--accent2);margin-left:8px;}
+  .product-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+  .product-actions{display:flex;gap:6px;}
+
+  /* IMG UPLOAD */
+  .img-upload-area{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;color:var(--muted);font-size:13px;font-weight:600;}
+  .img-upload-area:active{border-color:var(--accent);}
+  .img-upload-preview{width:100%;height:140px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:none;}
+  .img-upload-preview.show{display:block;}
+
+  /* TARIFF */
+  .tariff-block{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+  .tariff-label{font-size:13px;font-weight:700;margin-bottom:12px;}
+  .tariff-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tariff-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:4px;transition:border-color .2s;}
+  .tariff-field input:focus{border-color:var(--accent);}
+  .tariff-field small{display:block;font-size:10px;color:var(--muted);}
+
+  /* PROMO */
   .promo-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
   .promo-code{font-size:14px;font-weight:700;}
   .promo-discount{font-size:12px;font-weight:600;color:var(--green);background:rgba(34,197,94,.12);border-radius:6px;padding:3px 8px;margin-right:10px;}
   .promo-right{display:flex;align-items:center;gap:8px;}
+
   /* FAQ */
   .faq-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
   .faq-item input,.faq-item textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;outline:none;margin-bottom:8px;resize:none;}
   .faq-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
   .faq-num{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
-  /* ТАРИФЫ */
-  .tariff-block{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
-  .tariff-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-  .tariff-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:4px;transition:border-color .2s;}
-  .tariff-field input:focus{border-color:var(--accent);}
-  .tariff-field small{display:block;font-size:10px;color:var(--muted);}
-  .tariff-label{font-size:13px;font-weight:700;margin-bottom:12px;}
+
+  /* MSG EDITOR */
+  .msg-editor{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .msg-editor-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+  .msg-editor textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;outline:none;resize:none;transition:border-color .2s;}
+  .msg-editor textarea:focus{border-color:var(--accent);}
+
+  /* TOAST */
   .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
   .toast.ok{border-color:var(--green);color:var(--green);}
@@ -119,64 +163,50 @@
     <div class="header-top">
       <div class="logo">Shop<span>Panel</span></div>
       <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);">
-        <div class="status-dot"></div><span>Онлайн</span>
+        <div class="status-dot"></div><span id="shopName">Магазин</span>
       </div>
     </div>
   </div>
-
   <div class="tabs">
     <button class="tab active" onclick="switchTab('catalog')">🛍 Каталог</button>
-    <button class="tab" onclick="switchTab('delivery')">🚚 Доставка</button>
-    <button class="tab" onclick="switchTab('promos')">🎟 Промокоды</button>
-    <button class="tab" onclick="switchTab('faq')">❓ Вопросы</button>
+    <button class="tab" onclick="switchTab('calc')">💰 Доставка</button>
+    <button class="tab" onclick="switchTab('promos')">🎟 Промо</button>
+    <button class="tab" onclick="switchTab('faq')">📚 FAQ</button>
+    <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
   </div>
 
   <!-- КАТАЛОГ -->
   <div class="page active" id="page-catalog">
-    <div class="card">
-      <div class="card-title">Добавить товар</div>
-      <div class="field"><label>Название товара</label><input type="text" id="new_product_name" placeholder="Кроссовки Nike Air Max"></div>
-      <div class="field"><label>Цена</label><input type="text" id="new_product_price" placeholder="5990 ₽"></div>
-      <div class="field"><label>Описание</label><textarea id="new_product_desc" rows="2" placeholder="Краткое описание товара..."></textarea></div>
-      <div class="img-upload-row">
-        <img id="new_product_img_preview" class="img-preview" src="">
-        <div class="img-upload-btn" onclick="document.getElementById('new_product_img_file').click()">📷 Фото товара</div>
-        <button class="img-remove" id="new_product_img_remove" onclick="removeNewProductImg()" style="display:none">✕</button>
-        <input type="file" id="new_product_img_file" accept="image/*" style="display:none" onchange="handleNewProductImg(this)">
-      </div>
-      <div class="section-gap"></div>
-      <button class="btn btn-primary" onclick="addProduct()">Добавить товар</button>
-    </div>
-    <div class="card">
-      <div class="card-title">Товары в каталоге</div>
-      <div id="products-list"><div class="empty"><div class="empty-icon">🛍</div>Товаров нет</div></div>
-    </div>
+    <button class="btn-add-product" onclick="openProductModal()">
+      <span style="font-size:24px;">+</span> Добавить товар
+    </button>
+    <div id="products-list"></div>
   </div>
 
   <!-- ДОСТАВКА -->
-  <div class="page" id="page-delivery">
+  <div class="page" id="page-calc">
     <div class="card">
-      <div class="card-title">Настройки доставки</div>
+      <div class="card-title">Тарифы доставки</div>
       <div class="tariff-block">
-        <div class="tariff-label">🚚 Стандартная доставка</div>
+        <div class="tariff-label">📦 Обычная доставка</div>
         <div class="tariff-inputs">
-          <div class="tariff-field"><input type="number" id="delivery_price" placeholder="350"><small>Цена (₽)</small></div>
-          <div class="tariff-field"><input type="number" id="delivery_days" placeholder="7"><small>Дней</small></div>
+          <div class="tariff-field"><input type="number" id="normal_price" placeholder="350"><small>Цена (₽)</small></div>
+          <div class="tariff-field"><input type="number" id="normal_days" placeholder="14"><small>Дней</small></div>
         </div>
       </div>
       <div class="tariff-block">
         <div class="tariff-label">⚡ Экспресс доставка</div>
         <div class="tariff-inputs">
           <div class="tariff-field"><input type="number" id="express_price" placeholder="700"><small>Цена (₽)</small></div>
-          <div class="tariff-field"><input type="number" id="express_days" placeholder="2"><small>Дней</small></div>
+          <div class="tariff-field"><input type="number" id="express_days" placeholder="3"><small>Дней</small></div>
         </div>
       </div>
       <div class="tariff-block">
-        <div class="tariff-label">🆓 Бесплатная доставка от суммы</div>
-        <div class="field" style="margin-bottom:0;"><input type="number" id="free_delivery_from" placeholder="5000 (0 = отключено)"></div>
+        <div class="tariff-label">🆓 Бесплатно от суммы (0 = выкл)</div>
+        <input type="number" id="free_from" placeholder="5000" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;">
       </div>
       <div class="section-gap"></div>
-      <button class="btn btn-primary" onclick="saveDelivery()">Сохранить доставку</button>
+      <button class="btn btn-primary" onclick="saveDelivery()">Сохранить тарифы</button>
     </div>
   </div>
 
@@ -189,7 +219,7 @@
         <div class="field"><label>Скидка %</label><input type="number" id="new_promo_discount" placeholder="20" min="1" max="99"></div>
       </div>
       <div class="section-gap"></div>
-      <button class="btn btn-primary" onclick="addPromo()">Добавить промокод</button>
+      <button class="btn btn-primary" onclick="addPromo()">Добавить</button>
     </div>
     <div class="card">
       <div class="card-title">Активные промокоды</div>
@@ -197,14 +227,109 @@
     </div>
   </div>
 
-  <!-- ВОПРОСЫ -->
+  <!-- FAQ -->
   <div class="page" id="page-faq">
     <div class="card">
       <div class="card-title">Вопросы и ответы</div>
       <div id="faq-list"></div>
       <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:8px">+ Добавить вопрос</button>
     </div>
-    <button class="btn btn-primary" onclick="saveFaq()">Сохранить</button>
+    <div class="card">
+      <div class="card-title">Предлагаемые вопросы</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Нажмите чтобы добавить</div>
+      <div id="suggested-list"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
+  </div>
+
+  <!-- ОБЩЕЕ -->
+  <div class="page" id="page-general">
+    <div class="card">
+      <div class="card-title">Сообщения бота</div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">👋 Приветствие (/start)</div>
+        <textarea id="msg_welcome" rows="3"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🛍 Каталог</div>
+        <textarea id="msg_catalog" rows="2"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🚚 Доставка</div>
+        <textarea id="msg_delivery" rows="2"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🤩 Оформить заказ</div>
+        <textarea id="msg_order" rows="3"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">❓ Вопросы</div>
+        <textarea id="msg_support" rows="2"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveGeneral()">Сохранить сообщения</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Контакты</div>
+      <div class="field"><label>Менеджер</label><input type="text" id="manager_link" placeholder="@manager"></div>
+      <button class="btn btn-primary" onclick="saveContacts()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Добавить товар -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">Новый товар</span>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+
+    <!-- Изображение -->
+    <img id="modalImgPreview" class="img-upload-preview" src="">
+    <div class="img-upload-area" onclick="document.getElementById('modalImgFile').click()">
+      📷 Нажмите чтобы добавить фото
+    </div>
+    <input type="file" id="modalImgFile" accept="image/*" style="display:none" onchange="handleModalImg(this)">
+
+    <!-- Текст -->
+    <label>Название товара</label>
+    <input type="text" id="modalName" placeholder="Кроссовки Nike Air Max 270">
+
+    <label>Описание</label>
+    <textarea id="modalDesc" rows="3" placeholder="Описание товара, размеры, особенности..."></textarea>
+
+    <!-- Кнопка шаблона -->
+    <button class="btn btn-ghost" style="margin-bottom:12px;" onclick="openTemplateModal()">
+      📋 Использовать шаблон
+    </button>
+
+    <!-- Цена -->
+    <label>Цена</label>
+    <div class="price-row">
+      <input type="number" id="modalPrice" placeholder="5990">
+      <select id="modalCurrency" class="price-currency-select">
+        <option value="RUB">₽</option>
+        <option value="USD">$</option>
+        <option value="KZT">₸</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProduct()">
+      <span id="saveProductBtnText">Добавить товар</span>
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: Шаблоны -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Шаблоны</span>
+      <button class="modal-close" onclick="closeTemplateModal()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Выберите шаблон или создайте новый</div>
+    <div id="templates-list"></div>
+    <button class="btn btn-ghost" style="margin-top:8px;" onclick="createTemplate()">+ Создать шаблон из текущего текста</button>
   </div>
 </div>
 
@@ -221,11 +346,28 @@ const SKEY = 'shop_' + TG_USERNAME;
 let CLIENT_ID = null, settings = {}, promos = [], faqItems = [];
 let rememberMe = false;
 let products = [];
-let newProductImg = '';
+let templates = [];
+let editingProductId = null;
+let modalImg = '';
 
+const DEFAULT_MSGS = {
+  msg_welcome: 'Добро пожаловать в наш магазин! 👋\n\nЗдесь вы можете ознакомиться с нашим каталогом товаров.',
+  msg_catalog: 'Наш каталог товаров 🛍',
+  msg_delivery: 'Варианты доставки 🚚',
+  msg_order: 'Для оформления заказа напишите нашему менеджеру. Укажите товар, размер и адрес доставки.',
+  msg_support: 'Остались вопросы? Напишите нашему менеджеру, мы отвечаем быстро! 😊',
+};
+
+const SUGGESTED_FAQ = [
+  {question: 'Как оформить заказ?', answer: 'Выберите товар из каталога и напишите менеджеру. Укажите название товара, размер и адрес доставки.'},
+  {question: 'Сколько идёт доставка?', answer: 'Стандартная доставка 7-14 дней. Экспресс доставка 2-3 дня. Точные сроки зависят от вашего региона.'},
+  {question: 'Есть ли возврат?', answer: 'Да, мы принимаем возвраты в течение 14 дней с момента получения товара при условии сохранения товарного вида.'},
+];
+
+// ── Чекбокс ──
 function toggleRemember() {
   rememberMe = !rememberMe;
-  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe?' checked':'');
+  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
 }
 
 function saveSession(cid, botName) {
@@ -253,6 +395,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const s = getSession();
     if (s) {
       CLIENT_ID = s.cid;
+      document.getElementById('shopName').textContent = s.botName || 'Магазин';
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainScreen').style.display = 'block';
@@ -281,7 +424,9 @@ async function doLogin() {
       btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
     CLIENT_ID = data.client_id;
-    saveSession(CLIENT_ID, data.bot_name || 'Мой магазин');
+    const botName = data.bot_name || 'Магазин';
+    document.getElementById('shopName').textContent = botName;
+    saveSession(CLIENT_ID, botName);
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
@@ -293,7 +438,7 @@ async function doLogin() {
 }
 
 function switchTab(name) {
-  const pages = ['catalog','delivery','promos','faq'];
+  const pages = ['catalog','calc','promos','faq','general'];
   document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-'+name).classList.add('active');
@@ -311,105 +456,182 @@ async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST'
 async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
 
 async function loadAll() {
-  const [s, p] = await Promise.all([
-    apiGet('settings/'+CLIENT_ID),
-    apiGet('promos/'+CLIENT_ID),
-  ]);
+  const [s, p] = await Promise.all([apiGet('settings/'+CLIENT_ID), apiGet('promos/'+CLIENT_ID)]);
   settings = s; promos = p.promos;
   try { faqItems = JSON.parse(settings.faq_json||'[]'); } catch { faqItems = []; }
   try { products = JSON.parse(settings.shop_products||'[]'); } catch { products = []; }
-
-  renderPromos(); renderFaqItems(); renderProducts();
-
-  // Fill delivery
-  document.getElementById('delivery_price').value = settings.shop_delivery_price || '';
-  document.getElementById('delivery_days').value = settings.shop_delivery_days || '';
-  document.getElementById('express_price').value = settings.shop_express_price || '';
-  document.getElementById('express_days').value = settings.shop_express_days || '';
-  document.getElementById('free_delivery_from').value = settings.shop_free_from || '';
+  try { templates = JSON.parse(settings.shop_templates||'[]'); } catch { templates = []; }
+  renderProducts(); renderPromos(); renderFaqItems(); renderSuggested();
+  fillDelivery(); fillGeneral();
 }
 
-// ── Каталог ──
-function handleNewProductImg(input) {
+// ── КАТАЛОГ ──
+function openProductModal(id=null) {
+  editingProductId = id;
+  modalImg = '';
+  const modal = document.getElementById('productModal');
+  if (id) {
+    const p = products.find(x => x.id === id);
+    document.getElementById('modalTitle').textContent = 'Редактировать товар';
+    document.getElementById('saveProductBtnText').textContent = 'Сохранить изменения';
+    document.getElementById('modalName').value = p.name || '';
+    document.getElementById('modalDesc').value = p.desc || '';
+    document.getElementById('modalPrice').value = p.price || '';
+    document.getElementById('modalCurrency').value = p.currency || 'RUB';
+    if (p.img) {
+      modalImg = p.img;
+      const prev = document.getElementById('modalImgPreview');
+      prev.src = p.img; prev.classList.add('show');
+    }
+  } else {
+    document.getElementById('modalTitle').textContent = 'Новый товар';
+    document.getElementById('saveProductBtnText').textContent = 'Добавить товар';
+    document.getElementById('modalName').value = '';
+    document.getElementById('modalDesc').value = '';
+    document.getElementById('modalPrice').value = '';
+    document.getElementById('modalCurrency').value = 'RUB';
+    const prev = document.getElementById('modalImgPreview');
+    prev.src = ''; prev.classList.remove('show');
+  }
+  modal.classList.add('show');
+}
+
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('show');
+  editingProductId = null;
+  modalImg = '';
+}
+
+function handleModalImg(input) {
   const file = input.files[0]; if (!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    newProductImg = e.target.result;
-    const prev = document.getElementById('new_product_img_preview');
-    prev.src = newProductImg; prev.classList.add('show');
-    document.getElementById('new_product_img_remove').style.display = 'block';
+    modalImg = e.target.result;
+    const prev = document.getElementById('modalImgPreview');
+    prev.src = modalImg; prev.classList.add('show');
   };
   reader.readAsDataURL(file);
 }
 
-function removeNewProductImg() {
-  newProductImg = '';
-  const prev = document.getElementById('new_product_img_preview');
-  prev.src = ''; prev.classList.remove('show');
-  document.getElementById('new_product_img_remove').style.display = 'none';
-  document.getElementById('new_product_img_file').value = '';
-}
-
-async function addProduct() {
-  const name = document.getElementById('new_product_name').value.trim();
-  const price = document.getElementById('new_product_price').value.trim();
-  const desc = document.getElementById('new_product_desc').value.trim();
+async function saveProduct() {
+  const name = document.getElementById('modalName').value.trim();
+  const price = document.getElementById('modalPrice').value.trim();
   if (!name || !price) return showToast('Введи название и цену', 'err');
-  products.push({name, price, desc, img: newProductImg, id: Date.now()});
-  await saveProducts();
+  const product = {
+    id: editingProductId || Date.now(),
+    name,
+    desc: document.getElementById('modalDesc').value.trim(),
+    price,
+    currency: document.getElementById('modalCurrency').value,
+    img: modalImg,
+  };
+  if (editingProductId) {
+    const idx = products.findIndex(p => p.id === editingProductId);
+    products[idx] = product;
+  } else {
+    products.push(product);
+  }
+  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
   renderProducts();
-  document.getElementById('new_product_name').value = '';
-  document.getElementById('new_product_price').value = '';
-  document.getElementById('new_product_desc').value = '';
-  removeNewProductImg();
-  showToast('Товар добавлен!');
+  closeProductModal();
+  showToast(editingProductId ? 'Товар обновлён!' : 'Товар добавлен!');
   tg.HapticFeedback.notificationOccurred('success');
 }
 
 async function deleteProduct(id) {
   products = products.filter(p => p.id !== id);
-  await saveProducts();
+  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
   renderProducts();
   showToast('Товар удалён');
 }
 
-async function saveProducts() {
-  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
-}
-
 function renderProducts() {
   const el = document.getElementById('products-list');
-  if (!products.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🛍</div>Товаров нет</div>'; return; }
+  if (!products.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🛍</div>Товаров пока нет<br><small>Нажмите кнопку выше чтобы добавить</small></div>';
+    return;
+  }
+  const sym = {RUB:'₽', USD:'$', KZT:'₸'};
   el.innerHTML = products.map(p => `
     <div class="product-item">
       ${p.img ? `<img src="${p.img}" class="product-img show">` : ''}
-      <div class="product-header">
-        <span class="product-name">${esc(p.name)}</span>
-        <span class="product-price">${esc(p.price)}</span>
-      </div>
-      ${p.desc ? `<div class="product-desc">${esc(p.desc)}</div>` : ''}
-      <div class="product-actions">
-        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑 Удалить</button>
+      <div class="product-body">
+        <div class="product-header">
+          <span class="product-name">${esc(p.name)}</span>
+          <span class="product-price">${esc(p.price)} ${sym[p.currency]||'₽'}</span>
+        </div>
+        ${p.desc ? `<div class="product-desc">${esc(p.desc)}</div>` : ''}
+        <div class="product-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openProductModal(${p.id})">✏️ Изменить</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑 Удалить</button>
+        </div>
       </div>
     </div>`).join('');
 }
 
-// ── Доставка ──
+// ── ШАБЛОНЫ ──
+function openTemplateModal() {
+  renderTemplates();
+  document.getElementById('templateModal').classList.add('show');
+}
+function closeTemplateModal() {
+  document.getElementById('templateModal').classList.remove('show');
+}
+
+function renderTemplates() {
+  const el = document.getElementById('templates-list');
+  if (!templates.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Шаблонов нет<br><small>Создайте первый шаблон</small></div>';
+    return;
+  }
+  el.innerHTML = templates.map((t,i) => `
+    <div class="template-item" onclick="applyTemplate(${i})">
+      <div class="template-name">${esc(t.name)}</div>
+      <div class="template-preview">${esc(t.text)}</div>
+    </div>`).join('');
+}
+
+function applyTemplate(i) {
+  document.getElementById('modalDesc').value = templates[i].text;
+  closeTemplateModal();
+  showToast('Шаблон применён!');
+}
+
+async function createTemplate() {
+  const text = document.getElementById('modalDesc').value.trim();
+  if (!text) return showToast('Сначала введи текст описания', 'err');
+  const name = `Шаблон ${templates.length + 1}`;
+  templates.push({name, text});
+  await apiPost('settings/'+CLIENT_ID, {shop_templates: JSON.stringify(templates)});
+  showToast('Шаблон сохранён!');
+  renderTemplates();
+  tg.HapticFeedback.notificationOccurred('success');
+}
+
+// ── ДОСТАВКА ──
+function fillDelivery() {
+  document.getElementById('normal_price').value = settings.shop_normal_price || '';
+  document.getElementById('normal_days').value = settings.shop_normal_days || '';
+  document.getElementById('express_price').value = settings.shop_express_price || '';
+  document.getElementById('express_days').value = settings.shop_express_days || '';
+  document.getElementById('free_from').value = settings.shop_free_from || '';
+}
+
 async function saveDelivery() {
   try {
     await apiPost('settings/'+CLIENT_ID, {
-      shop_delivery_price: parseFloat(document.getElementById('delivery_price').value)||0,
-      shop_delivery_days: parseInt(document.getElementById('delivery_days').value)||0,
+      shop_normal_price: parseFloat(document.getElementById('normal_price').value)||0,
+      shop_normal_days: parseInt(document.getElementById('normal_days').value)||0,
       shop_express_price: parseFloat(document.getElementById('express_price').value)||0,
       shop_express_days: parseInt(document.getElementById('express_days').value)||0,
-      shop_free_from: parseFloat(document.getElementById('free_delivery_from').value)||0,
+      shop_free_from: parseFloat(document.getElementById('free_from').value)||0,
     });
     showToast('Доставка сохранена!');
     tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка', 'err'); }
 }
 
-// ── Промокоды ──
+// ── ПРОМОКОДЫ ──
 function renderPromos() {
   const el = document.getElementById('promos-list');
   if (!promos.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>'; return; }
@@ -444,7 +666,7 @@ async function deletePromo(code) {
 // ── FAQ ──
 function renderFaqItems() {
   const el = document.getElementById('faq-list');
-  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">❓</div>Вопросов нет</div>'; return; }
+  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>'; return; }
   el.innerHTML = faqItems.map((item,i) => `
     <div class="faq-item">
       <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
@@ -453,13 +675,46 @@ function renderFaqItems() {
       <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
     </div>`).join('');
 }
-function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); }
-function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); }
+function renderSuggested() {
+  const el = document.getElementById('suggested-list');
+  const used = faqItems.map(f => f.question);
+  const avail = SUGGESTED_FAQ.filter(s => !used.includes(s.question));
+  if (!avail.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Все вопросы добавлены ✅</div>'; return; }
+  el.innerHTML = avail.map(s => `<button class="btn-suggest" onclick="addSuggestedFaq('${esc(s.question)}','${esc(s.answer)}')">➕ ${s.question}</button>`).join('');
+}
+function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); renderSuggested(); }
+function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); renderSuggested(); }
+function addSuggestedFaq(q,a) { faqItems.push({question:q,answer:a}); renderFaqItems(); renderSuggested(); showToast('Вопрос добавлен!'); tg.HapticFeedback.impactOccurred('light'); }
 async function saveFaq() {
+  try { await apiPost('faq/'+CLIENT_ID, faqItems); showToast('FAQ сохранён!'); tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка', 'err'); }
+}
+
+// ── ОБЩЕЕ ──
+function fillGeneral() {
+  document.getElementById('msg_welcome').value = settings.shop_msg_welcome || DEFAULT_MSGS.msg_welcome;
+  document.getElementById('msg_catalog').value = settings.shop_msg_catalog || DEFAULT_MSGS.msg_catalog;
+  document.getElementById('msg_delivery').value = settings.shop_msg_delivery || DEFAULT_MSGS.msg_delivery;
+  document.getElementById('msg_order').value = settings.shop_msg_order || DEFAULT_MSGS.msg_order;
+  document.getElementById('msg_support').value = settings.shop_msg_support || DEFAULT_MSGS.msg_support;
+  document.getElementById('manager_link').value = settings.manager_link || '';
+}
+async function saveGeneral() {
   try {
-    await apiPost('faq/'+CLIENT_ID, faqItems);
-    showToast('FAQ сохранён!');
-    tg.HapticFeedback.notificationOccurred('success');
+    await apiPost('settings/'+CLIENT_ID, {
+      shop_msg_welcome: document.getElementById('msg_welcome').value.trim(),
+      shop_msg_catalog: document.getElementById('msg_catalog').value.trim(),
+      shop_msg_delivery: document.getElementById('msg_delivery').value.trim(),
+      shop_msg_order: document.getElementById('msg_order').value.trim(),
+      shop_msg_support: document.getElementById('msg_support').value.trim(),
+    });
+    showToast('Сообщения сохранены!'); tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+async function saveContacts() {
+  try {
+    await apiPost('settings/'+CLIENT_ID, {manager_link: document.getElementById('manager_link').value.trim()});
+    showToast('Контакты сохранены!'); tg.HapticFeedback.notificationOccurred('success');
   } catch { showToast('Ошибка', 'err'); }
 }
 
