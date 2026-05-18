@@ -23,9 +23,10 @@ dp = Dispatcher(storage=MemoryStorage())
 
 
 class RegisterStates(StatesGroup):
+    client_type = State()
     username    = State()
-    access_code = State()
     bot_name    = State()
+    access_code = State()
 
 
 def is_master(user_id):
