@@ -58,7 +58,7 @@ async def cmd_start(message: Message, state: FSMContext):
         await message.answer("⛔ Доступ запрещён.")
         return
     await message.answer(
-        "👑 <b>Панель управления SaaS</b>\n\nВыбери действие:",
+        "👑 <b>Панель управления SaaS</b>\n\nЗдесь я управляю клиентами и их ботами.\nВыберите действие:",
         parse_mode="HTML",
         reply_markup=master_menu_kb()
     )
@@ -160,7 +160,7 @@ async def reg_access_code(message: Message, state: FSMContext):
             f"🏪 Магазин: {data['bot_name']}\n"
             f"📋 Тип: {'📦 Посредник' if ctype == 'cargo' else '🛍 Личный магазин'}\n"
             f"🔑 Код доступа: <code>{code}</code>\n\n"
-            f"📲 Клиент открывает бота → вводит код → "
+            f"📲 Клиент открывает бота @pandatest15_bot → вводит код → "
             f"вводит токен своего бота → настраивает всё в Mini App.",
             parse_mode="HTML",
             reply_markup=master_menu_kb()
