@@ -1,0 +1,24 @@
+# Секреты — НИКОГДА не коммитить в git
+.env
+*.env
+
+# База данных
+*.db
+*.sqlite
+
+# Python кэш
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Виртуальное окружение
+venv/
+.venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
