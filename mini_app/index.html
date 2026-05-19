@@ -494,7 +494,7 @@
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-const INIT_DATA = tg.initData || 'dev';
+let INIT_DATA = tg.initData || 'dev'; // будет заменён session_token после входа
 const API = '';
 const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
 const SKEY = 'bp_' + TG_USERNAME;
@@ -556,13 +556,11 @@ function toggleRemember() {
   document.getElementById('rememberBox').className='custom-checkbox'+(rememberMe?' checked':'');
 }
 
-function saveSession(cid,botName) {
+function saveSession(cid,botName,sessionToken) {
   if(!rememberMe) return;
   try {
     localStorage.setItem(SKEY,JSON.stringify({
-      cid,botName,
-      code:document.getElementById('codeInput').value.trim().toUpperCase(),
-      token:document.getElementById('tokenInput').value.trim(),
+      cid,botName,sessionToken,
       exp:Date.now()+7*864e5
     }));
   } catch {}
@@ -580,8 +578,9 @@ window.addEventListener('DOMContentLoaded', async () => {
   loadRates();
   try {
     const s=getSession();
-    if(s){
+    if(s&&s.sessionToken){
       CLIENT_ID=s.cid;
+      INIT_DATA=s.sessionToken;
       document.getElementById('botName').textContent=s.botName||'Мой магазин';
       await loadAll();
       document.getElementById('loginScreen').style.display='none';
@@ -605,6 +604,7 @@ async function doLogin() {
     const data=await r.json();
     if(!r.ok||!data.client_id){err.textContent='❌ '+(data.detail||'Неверный код');btn.disabled=false;btn.textContent='Войти в панель';return;}
     CLIENT_ID=data.client_id;
+    INIT_DATA=data.session_token;  // теперь шлём session_token вместо tg.initData
     const botName=data.bot_name||'Мой магазин';
     const clientType=data.client_type||'cargo';
     // Если личный магазин — переходим на shop.html
@@ -612,15 +612,14 @@ async function doLogin() {
       const params=new URLSearchParams({
         cid:CLIENT_ID,
         bn:botName,
-        code:document.getElementById('codeInput').value.trim().toUpperCase(),
-        token:document.getElementById('tokenInput').value.trim(),
+        st:data.session_token,
         rem:rememberMe?'1':'0'
       });
       window.location.href='/shop?'+params.toString();
       return;
     }
     document.getElementById('botName').textContent=botName;
-    saveSession(CLIENT_ID,botName);
+    saveSession(CLIENT_ID,botName,data.session_token);
     await loadAll();
     document.getElementById('loginScreen').style.display='none';
     document.getElementById('mainScreen').style.display='block';

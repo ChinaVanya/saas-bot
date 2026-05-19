@@ -3,7 +3,6 @@ import os
 import json
 import hmac
 import hashlib
-from urllib.parse import unquote
 
 sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
 
@@ -23,7 +22,7 @@ from database.db import (
 
 app = FastAPI()
 
-# CORS: в продакшне разрешаем только свой домен Railway
+# CORS: разрешаем свой домен Railway + Telegram
 ALLOWED_ORIGIN = os.environ.get("MINI_APP_URL", "*").replace("/app", "").replace("/shop", "")
 app.add_middleware(
     CORSMiddleware,
@@ -43,46 +42,41 @@ app.mount("/shop", StaticFiles(directory="mini_app", html=True), name="shop")
 
 
 # ---------------------------------------------------------------------------
-# Верификация подписи Telegram Mini App
+# Сессионные токены
 # ---------------------------------------------------------------------------
-MASTER_TOKEN = os.environ.get("MASTER_TOKEN", "")
+# После успешного /api/auth сервер выдаёт подписанный session_token.
+# Все последующие запросы передают его в заголовке x-init-data.
+# Это надёжнее проверки подписи Telegram — не зависит от того,
+# через какой именно бот (мастер или клиентский) открыта Mini App.
 
-def _verify_telegram_init_data(init_data: str) -> bool:
-    """
-    Проверяет подпись initData от Telegram.
-    Документация: https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
-    """
-    if not init_data or not MASTER_TOKEN:
+SESSION_SECRET = os.environ.get("SESSION_SECRET", os.environ.get("MASTER_TOKEN", "fallback-secret"))
+
+
+def _make_session_token(client_id: int) -> str:
+    """Генерирует подписанный токен вида 'client_id.hmac'."""
+    payload = str(client_id)
+    sig = hmac.new(SESSION_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    return f"{payload}.{sig}"
+
+
+def _verify_session_token(token: str, client_id: int) -> bool:
+    """Проверяет что токен выдан нашим сервером для данного client_id."""
+    if not token:
         return False
-
-    # Разбираем строку вида "key=value&key=value&hash=..."
     try:
-        parsed = {}
-        for part in unquote(init_data).split("&"):
-            if "=" in part:
-                k, v = part.split("=", 1)
-                parsed[k] = v
+        payload, sig = token.split(".", 1)
+        if int(payload) != client_id:
+            return False
+        expected = hmac.new(SESSION_SECRET.encode(), payload.encode(), hashlib.sha256).hexdigest()
+        return hmac.compare_digest(expected, sig)
     except Exception:
         return False
 
-    received_hash = parsed.pop("hash", None)
-    if not received_hash:
-        return False
 
-    # Строка для проверки: отсортированные пары key=value через \n
-    data_check_string = "\n".join(f"{k}={v}" for k, v in sorted(parsed.items()))
-
-    # HMAC-SHA256 с ключом = HMAC-SHA256("WebAppData", bot_token)
-    secret_key = hmac.new(b"WebAppData", MASTER_TOKEN.encode(), hashlib.sha256).digest()
-    expected = hmac.new(secret_key, data_check_string.encode(), hashlib.sha256).hexdigest()
-
-    return hmac.compare_digest(expected, received_hash)
-
-
-def require_auth(x_init_data: str):
-    """Вызывается в эндпоинтах требующих авторизации Telegram."""
-    if not _verify_telegram_init_data(x_init_data):
-        raise HTTPException(status_code=403, detail="Невалидная подпись Telegram")
+def require_auth(x_init_data: str, client_id: int):
+    """Вызывается во всех защищённых эндпоинтах."""
+    if not _verify_session_token(x_init_data, client_id):
+        raise HTTPException(status_code=403, detail="Недействительная сессия")
 
 
 # ---------------------------------------------------------------------------
@@ -169,24 +163,26 @@ class ApplyRequest(BaseModel):
 @app.post("/api/auth")
 async def api_auth(body: AuthRequest):
     """
-    Авторизация клиента по коду доступа и username.
-    Не требует подписи Telegram — это первый шаг входа.
+    Авторизация по коду доступа + username.
+    Возвращает session_token — он используется во всех дальнейших запросах.
     """
     client = await get_client_by_code_and_username(body.code, body.username)
     if not client:
         raise HTTPException(status_code=401, detail="Неверный код или аккаунт не совпадает")
     if body.token and ":" in body.token:
         await update_bot_token(client["id"], body.token)
+    session_token = _make_session_token(client["id"])
     return {
-        "client_id":   client["id"],
-        "bot_name":    client["bot_name"],
-        "client_type": client.get("client_type", "cargo")
+        "client_id":     client["id"],
+        "bot_name":      client["bot_name"],
+        "client_type":   client.get("client_type", "cargo"),
+        "session_token": session_token,   # <-- фронтенд сохраняет и шлёт в x-init-data
     }
 
 
 @app.post("/api/token/{client_id}")
 async def api_update_token(client_id: int, body: TokenUpdate, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     if ":" not in body.token:
         raise HTTPException(status_code=400, detail="Неверный формат токена")
     await update_bot_token(client_id, body.token)
@@ -195,13 +191,13 @@ async def api_update_token(client_id: int, body: TokenUpdate, x_init_data: str =
 
 @app.post("/api/apply/{client_id}")
 async def api_apply(client_id: int, body: ApplyRequest, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     return {"ok": True}
 
 
 @app.get("/api/settings/{client_id}")
 async def api_get_settings(client_id: int, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     settings = await get_settings(client_id)
     if not settings:
         raise HTTPException(status_code=404, detail="Client not found")
@@ -214,7 +210,7 @@ async def api_get_settings(client_id: int, x_init_data: str = Header(...)):
 
 @app.post("/api/settings/{client_id}")
 async def api_update_settings(client_id: int, body: SettingsUpdate, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     updates = {field: value for field, value in body.dict().items() if value is not None}
     if not updates:
         return {"ok": True}
@@ -228,40 +224,40 @@ async def api_update_settings(client_id: int, body: SettingsUpdate, x_init_data:
 
 @app.get("/api/promos/{client_id}")
 async def api_get_promos(client_id: int, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     return {"promos": await get_promos(client_id)}
 
 
 @app.post("/api/promos/{client_id}")
 async def api_add_promo(client_id: int, body: PromoAdd, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     success = await add_promo(client_id, body.code, body.discount)
     return {"ok": success}
 
 
 @app.delete("/api/promos/{client_id}")
 async def api_delete_promo(client_id: int, body: PromoDelete, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     success = await delete_promo(client_id, body.code)
     return {"ok": success}
 
 
 @app.get("/api/tracks/{client_id}")
 async def api_get_tracks(client_id: int, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     return {"tracks": await get_all_tracks(client_id)}
 
 
 @app.post("/api/tracks/{client_id}")
 async def api_add_track(client_id: int, body: TrackAdd, x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     success = await add_track(client_id, body.order_id, body.track_num)
     return {"ok": success}
 
 
 @app.post("/api/faq/{client_id}")
 async def api_update_faq(client_id: int, body: List[FaqItem], x_init_data: str = Header(...)):
-    require_auth(x_init_data)
+    require_auth(x_init_data, client_id)
     faq_data = [{"question": i.question, "answer": i.answer} for i in body]
     faq_json = json.dumps(faq_data, ensure_ascii=False)
     success = await update_settings(client_id, faq_json=faq_json)

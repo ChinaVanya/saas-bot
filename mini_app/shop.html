@@ -338,7 +338,7 @@
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-const INIT_DATA = tg.initData || 'dev';
+let INIT_DATA = tg.initData || 'dev'; // будет заменён session_token после входа
 const API = '';
 const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
 const SKEY = 'shop_' + TG_USERNAME;
@@ -370,13 +370,11 @@ function toggleRemember() {
   document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
 }
 
-function saveSession(cid, botName) {
+function saveSession(cid, botName, sessionToken) {
   if (!rememberMe) return;
   try {
     localStorage.setItem(SKEY, JSON.stringify({
-      cid, botName,
-      code: document.getElementById('codeInput').value.trim().toUpperCase(),
-      token: document.getElementById('tokenInput').value.trim(),
+      cid, botName, sessionToken,
       exp: Date.now() + 7*864e5
     }));
   } catch {}
@@ -398,13 +396,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     if (cid) {
       CLIENT_ID = parseInt(cid);
       const botName = params.get('bn') || 'Магазин';
-      const code = params.get('code') || '';
-      const token = params.get('token') || '';
+      const sessionToken = params.get('st') || '';
       rememberMe = params.get('rem') === '1';
+      INIT_DATA = sessionToken;
       document.getElementById('shopName').textContent = botName;
-      if (rememberMe) {
-        try { localStorage.setItem(SKEY, JSON.stringify({cid:CLIENT_ID,botName,code,token,exp:Date.now()+7*864e5})); } catch {}
-      }
+      saveSession(CLIENT_ID, botName, sessionToken);
       // Чистим URL
       window.history.replaceState({}, '', '/shop');
       await loadAll();
@@ -415,13 +411,22 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch {}
   try {
     const s = getSession();
-    if (s) {
+    if (s && s.sessionToken) {
       CLIENT_ID = s.cid;
+      INIT_DATA = s.sessionToken;
       document.getElementById('shopName').textContent = s.botName || 'Магазин';
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('mainScreen').style.display = 'block';
     }
+  } catch { localStorage.removeItem(SKEY); }
+});
+
+
+      document.getElementById('shopName').textContent = s.botName || 'Магазин';
+      await loadAll();
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
     }
   } catch { localStorage.removeItem(SKEY); }
 });
@@ -447,9 +452,10 @@ async function doLogin() {
       btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
     CLIENT_ID = data.client_id;
+    INIT_DATA = data.session_token;
     const botName = data.bot_name || 'Магазин';
     document.getElementById('shopName').textContent = botName;
-    saveSession(CLIENT_ID, botName);
+    saveSession(CLIENT_ID, botName, data.session_token);
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
