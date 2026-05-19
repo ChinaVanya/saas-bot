@@ -1,520 +1,780 @@
-import asyncio
-import sys
-import os
-import json
-import base64
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Панель магазина</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+  :root{--bg:#0f0f13;--surface:#1a1a24;--surface2:#22222f;--border:#2e2e3e;--accent:#6c63ff;--accent2:#a78bfa;--green:#22c55e;--red:#ef4444;--text:#f0f0f5;--muted:#7070a0;--radius:14px;}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+  body{font-family:'Manrope',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
 
-sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+  /* LOGIN */
+  .welcome-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 24px;animation:fadeIn .5s ease;}
+  .welcome-emoji{font-size:64px;margin-bottom:20px;animation:bounceIn .6s ease;}
+  .welcome-title{font-size:26px;font-weight:800;margin-bottom:10px;text-align:center;}
+  .welcome-sub{font-size:15px;color:var(--muted);text-align:center;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes bounceIn{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
+  .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 24px;}
+  .login-logo{font-size:48px;margin-bottom:20px;}
+  .login-title{font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;}
+  .login-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;}
+  .login-hint{font-size:12px;color:var(--muted);text-align:left;width:100%;margin-bottom:6px;padding-left:4px;}
+  .login-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;color:var(--text);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-align:center;outline:none;margin-bottom:12px;text-transform:uppercase;transition:border-color .2s;}
+  .login-input.token-input{text-transform:none;font-size:13px;letter-spacing:0;font-weight:500;}
+  .login-input:focus{border-color:var(--accent);}
+  .login-input::placeholder{letter-spacing:0;font-weight:400;font-size:13px;color:var(--muted);text-transform:none;}
+  .login-btn{width:100%;padding:16px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(108,99,255,.4);transition:all .2s;margin-top:4px;}
+  .login-btn:active{transform:scale(.97);}
+  .login-btn:disabled{opacity:.5;cursor:not-allowed;}
+  .login-error{margin-top:12px;color:var(--red);font-size:13px;font-weight:600;text-align:center;min-height:20px;}
+  .remember-row{display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer;width:100%;}
+  .custom-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+  .custom-checkbox.checked{background:var(--accent);border-color:var(--accent);}
+  .custom-checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
+  .remember-label{font-size:13px;color:var(--muted);}
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.types import Message, CallbackQuery, BufferedInputFile
-from aiogram.filters import CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import State, StatesGroup
-from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
+  /* MAIN */
+  .main-screen{display:none;padding-bottom:80px;}
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;}
+  .logo{font-size:18px;font-weight:800;}
+  .logo span{color:var(--accent2);}
+  .status-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);}
+  .tabs{display:flex;gap:4px;background:var(--surface2);border-radius:12px;padding:4px;margin:16px 20px 0;overflow-x:auto;scrollbar-width:none;}
+  .tabs::-webkit-scrollbar{display:none;}
+  .tab{flex:1;min-width:fit-content;padding:8px 6px;border:none;border-radius:9px;background:transparent;color:var(--muted);font-family:'Manrope',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;}
+  .tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 12px rgba(108,99,255,.4);}
+  .page{display:none;padding:20px;}
+  .page.active{display:block;}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:14px;}
+  .card-title{font-size:13px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:14px;}
+  .field{margin-bottom:14px;}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+  .field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;}
+  .field input:focus,.field textarea:focus{border-color:var(--accent);}
 
-from database.db import init_db, get_all_active_bots, get_settings, check_promo, get_track
+  /* BTNS */
+  .btn{width:100%;padding:13px;border:none;border-radius:10px;font-family:'Manrope',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .2s;}
+  .btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(108,99,255,.35);}
+  .btn-primary:active{transform:scale(.97);}
+  .btn-sm{width:auto;padding:8px 14px;font-size:13px;border-radius:8px;}
+  .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+  .btn-ghost{background:var(--surface2);color:var(--text);border:1px solid var(--border);}
+  .btn-add-product{width:100%;padding:20px;background:linear-gradient(135deg,rgba(108,99,255,.2),rgba(108,99,255,.05));border:2px dashed rgba(108,99,255,.4);border-radius:var(--radius);color:var(--accent2);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:14px;}
+  .btn-add-product:active{transform:scale(.98);border-color:var(--accent);}
+  .btn-suggest{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;text-align:left;width:100%;margin-bottom:8px;}
+  .btn-suggest:active{background:var(--accent);color:#fff;border-color:var(--accent);}
 
-import aiohttp
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:flex-end;}
+  .modal-overlay.show{display:flex;}
+  .modal{background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-height:90vh;overflow-y:auto;}
+  .modal-title{font-size:18px;font-weight:800;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;}
+  .modal-close{background:var(--surface2);border:none;border-radius:8px;color:var(--muted);font-size:16px;cursor:pointer;padding:6px 10px;}
+  .modal input,.modal textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;resize:none;transition:border-color .2s;margin-bottom:12px;}
+  .modal input:focus,.modal textarea:focus{border-color:var(--accent);}
+  .modal label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;}
 
-TRACKING_URLS = {
-    'track24':     'https://track24.ru/?code=',
-    'track24api':  'https://track24.ru/?code=',
+  /* CURRENCY PRICE */
+  .price-row{display:grid;grid-template-columns:1fr 80px;gap:8px;margin-bottom:12px;}
+  .price-currency-select{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;appearance:none;-webkit-appearance:none;text-align:center;}
+
+  /* TEMPLATE */
+  .template-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;}
+  .template-item:active{border-color:var(--accent);background:rgba(108,99,255,.1);}
+  .template-name{font-size:13px;font-weight:700;margin-bottom:3px;}
+  .template-preview{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* PRODUCT CARD */
+  .product-item{background:var(--surface2);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+  .product-img{width:100%;height:140px;object-fit:cover;display:none;}
+  .product-img.show{display:block;}
+  .product-body{padding:12px;}
+  .product-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;}
+  .product-name{font-size:14px;font-weight:700;flex:1;}
+  .product-price{font-size:15px;font-weight:800;color:var(--accent2);margin-left:8px;}
+  .product-desc{font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5;}
+  .product-actions{display:flex;gap:6px;}
+
+  /* IMG UPLOAD */
+  .img-upload-area{border:2px dashed var(--border);border-radius:10px;padding:16px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:12px;color:var(--muted);font-size:13px;font-weight:600;}
+  .img-upload-area:active{border-color:var(--accent);}
+  .img-upload-preview{width:100%;height:140px;object-fit:cover;border-radius:10px;margin-bottom:8px;display:none;}
+  .img-upload-preview.show{display:block;}
+
+  /* TARIFF */
+  .tariff-block{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;}
+  .tariff-label{font-size:13px;font-weight:700;margin-bottom:12px;}
+  .tariff-inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .tariff-field input{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:8px 10px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;font-weight:600;outline:none;margin-bottom:4px;transition:border-color .2s;}
+  .tariff-field input:focus{border-color:var(--accent);}
+  .tariff-field small{display:block;font-size:10px;color:var(--muted);}
+
+  /* PROMO */
+  .promo-item{display:flex;align-items:center;justify-content:space-between;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px;}
+  .promo-code{font-size:14px;font-weight:700;}
+  .promo-discount{font-size:12px;font-weight:600;color:var(--green);background:rgba(34,197,94,.12);border-radius:6px;padding:3px 8px;margin-right:10px;}
+  .promo-right{display:flex;align-items:center;gap:8px;}
+
+  /* FAQ */
+  .faq-item{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;}
+  .faq-item input,.faq-item textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;outline:none;margin-bottom:8px;resize:none;}
+  .faq-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .faq-num{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;}
+
+  /* MSG EDITOR */
+  .msg-editor{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:12px;}
+  .msg-editor-title{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px;}
+  .msg-editor textarea{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:13px;outline:none;resize:none;transition:border-color .2s;}
+  .msg-editor textarea:focus{border-color:var(--accent);}
+
+  /* TOAST */
+  .toast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:all .3s;z-index:999;white-space:nowrap;}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .toast.ok{border-color:var(--green);color:var(--green);}
+  .toast.err{border-color:var(--red);color:var(--red);}
+  .empty{text-align:center;padding:30px 0;color:var(--muted);font-size:14px;}
+  .empty-icon{font-size:32px;margin-bottom:8px;}
+  .row{display:flex;gap:10px;}
+  .row .field{flex:1;margin-bottom:0;}
+  .section-gap{margin-top:16px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="welcome-screen" id="welcomeScreen" style="display:none;">
+  <div class="welcome-emoji">👋</div>
+  <div class="welcome-title">Добро пожаловать!</div>
+  <div class="welcome-sub" id="welcomeShopName"></div>
+</div>
+
+<div class="login-screen" id="loginScreen" style="display:none;">
+  <div class="login-error" id="loginError"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main-screen" id="mainScreen">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo" id="shopName" style="font-size:18px;">Магазин</div>
+      <button class="btn btn-apply" onclick="applyToBot()" style="margin:0;padding:8px 14px;font-size:13px;">🚀 Применить к боту</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('catalog')">🛍 Каталог</button>
+    <button class="tab" onclick="switchTab('calc')">💰 Доставка</button>
+    <button class="tab" onclick="switchTab('promos')">🎟 Промо</button>
+    <button class="tab" onclick="switchTab('faq')">📚 FAQ</button>
+    <button class="tab" onclick="switchTab('general')">⚙️ Общее</button>
+  </div>
+
+  <!-- КАТАЛОГ -->
+  <div class="page active" id="page-catalog">
+    <button class="btn-add-product" onclick="openProductModal()">
+      <span style="font-size:24px;">+</span> Добавить товар
+    </button>
+    <div id="products-list"></div>
+  </div>
+
+  <!-- ДОСТАВКА -->
+  <div class="page" id="page-calc">
+    <div class="card">
+      <div class="card-title">Тарифы доставки</div>
+      <div class="tariff-block">
+        <div class="tariff-label">📦 Обычная доставка</div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="normal_price" placeholder="350"><small>Цена (₽)</small></div>
+          <div class="tariff-field"><input type="number" id="normal_days" placeholder="14"><small>Дней</small></div>
+        </div>
+      </div>
+      <div class="tariff-block">
+        <div class="tariff-label">⚡ Экспресс доставка</div>
+        <div class="tariff-inputs">
+          <div class="tariff-field"><input type="number" id="express_price" placeholder="700"><small>Цена (₽)</small></div>
+          <div class="tariff-field"><input type="number" id="express_days" placeholder="3"><small>Дней</small></div>
+        </div>
+      </div>
+      <div class="tariff-block">
+        <div class="tariff-label">🆓 Бесплатно от суммы (0 = выкл)</div>
+        <input type="number" id="free_from" placeholder="5000" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:'Manrope',sans-serif;font-size:14px;outline:none;">
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="saveDelivery()">Сохранить тарифы</button>
+    </div>
+  </div>
+
+  <!-- ПРОМОКОДЫ -->
+  <div class="page" id="page-promos">
+    <div class="card">
+      <div class="card-title">Добавить промокод</div>
+      <div class="row">
+        <div class="field"><label>Код</label><input type="text" id="new_promo_code" placeholder="SALE20" style="text-transform:uppercase"></div>
+        <div class="field"><label>Скидка %</label><input type="number" id="new_promo_discount" placeholder="20" min="1" max="99"></div>
+      </div>
+      <div class="section-gap"></div>
+      <button class="btn btn-primary" onclick="addPromo()">Добавить</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Активные промокоды</div>
+      <div id="promos-list"></div>
+    </div>
+  </div>
+
+  <!-- FAQ -->
+  <div class="page" id="page-faq">
+    <div class="card">
+      <div class="card-title">Вопросы и ответы</div>
+      <div id="faq-list"></div>
+      <button class="btn btn-ghost btn-sm" onclick="addFaqItem()" style="width:100%;margin-top:8px">+ Добавить вопрос</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Предлагаемые вопросы</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Нажмите чтобы добавить</div>
+      <div id="suggested-list"></div>
+    </div>
+    <button class="btn btn-primary" onclick="saveFaq()">Сохранить FAQ</button>
+  </div>
+
+  <!-- ОБЩЕЕ -->
+  <div class="page" id="page-general">
+    <div class="card">
+      <div class="card-title">Сообщения бота</div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">👋 Приветствие (/start)</div>
+        <textarea id="msg_welcome" rows="3"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🛍 Каталог</div>
+        <textarea id="msg_catalog" rows="2"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🚚 Доставка</div>
+        <textarea id="msg_delivery" rows="2"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">🤩 Оформить заказ</div>
+        <textarea id="msg_order" rows="3"></textarea>
+      </div>
+      <div class="msg-editor">
+        <div class="msg-editor-title">❓ Вопросы</div>
+        <textarea id="msg_support" rows="2"></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="saveGeneral()">Сохранить сообщения</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Контакты</div>
+      <div class="field"><label>Менеджер</label><input type="text" id="manager_link" placeholder="@manager"></div>
+      <button class="btn btn-primary" onclick="saveContacts()">Сохранить</button>
+    </div>
+    <div class="card">
+      <div class="card-title">Токен бота</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Введите новый токен от @BotFather если хотите сменить бота</div>
+      <div class="field"><input type="text" id="newTokenInput" placeholder="123456789:ABC-DEF..."></div>
+      <button class="btn btn-primary" onclick="updateToken()">Обновить токен</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Добавить товар -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span id="modalTitle">Новый товар</span>
+      <button class="modal-close" onclick="closeProductModal()">✕</button>
+    </div>
+
+    <!-- Изображение -->
+    <img id="modalImgPreview" class="img-upload-preview" src="">
+    <div class="img-upload-area" onclick="document.getElementById('modalImgFile').click()">
+      📷 Нажмите чтобы добавить фото
+    </div>
+    <input type="file" id="modalImgFile" accept="image/*" style="display:none" onchange="handleModalImg(this)">
+
+    <!-- Текст -->
+    <label>Название товара</label>
+    <input type="text" id="modalName" placeholder="Кроссовки Nike Air Max 270">
+
+    <label>Описание</label>
+    <textarea id="modalDesc" rows="3" placeholder="Описание товара, размеры, особенности..."></textarea>
+
+    <!-- Кнопка шаблона -->
+    <button class="btn btn-ghost" style="margin-bottom:12px;" onclick="openTemplateModal()">
+      📋 Использовать шаблон
+    </button>
+
+    <!-- Цена -->
+    <label>Цена</label>
+    <div class="price-row">
+      <input type="number" id="modalPrice" placeholder="5990">
+      <select id="modalCurrency" class="price-currency-select">
+        <option value="RUB">₽</option>
+        <option value="USD">$</option>
+        <option value="KZT">₸</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" onclick="saveProduct()">
+      <span id="saveProductBtnText">Добавить товар</span>
+    </button>
+  </div>
+</div>
+
+<!-- MODAL: Шаблоны -->
+<div class="modal-overlay" id="templateModal">
+  <div class="modal">
+    <div class="modal-title">
+      <span>Шаблоны</span>
+      <button class="modal-close" onclick="closeTemplateModal()">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Выберите шаблон или создайте новый</div>
+    <div id="templates-list"></div>
+    <button class="btn btn-ghost" style="margin-top:8px;" onclick="createTemplate()">+ Создать шаблон из текущего текста</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+const API = '';
+let SESSION = '';
+const SKEY = 'shop_session';
+
+let CLIENT_ID = null, settings = {}, promos = [], faqItems = [];
+let rememberMe = false;
+let products = [];
+let templates = [];
+let editingProductId = null;
+let modalImg = '';
+
+const DEFAULT_MSGS = {
+  msg_welcome: 'Добро пожаловать в наш магазин! 👋\n\nЗдесь вы можете ознакомиться с нашим каталогом товаров.',
+  msg_catalog: 'Наш каталог товаров 🛍',
+  msg_delivery: 'Варианты доставки 🚚',
+  msg_order: 'Для оформления заказа напишите нашему менеджеру. Укажите товар, размер и адрес доставки.',
+  msg_support: 'Остались вопросы? Напишите нашему менеджеру, мы отвечаем быстро! 😊',
+};
+
+const SUGGESTED_FAQ = [
+  {question: 'Как оформить заказ?', answer: 'Выберите товар из каталога и напишите менеджеру. Укажите название товара, размер и адрес доставки.'},
+  {question: 'Сколько идёт доставка?', answer: 'Стандартная доставка 7-14 дней. Экспресс доставка 2-3 дня. Точные сроки зависят от вашего региона.'},
+  {question: 'Есть ли возврат?', answer: 'Да, мы принимаем возвраты в течение 14 дней с момента получения товара при условии сохранения товарного вида.'},
+];
+
+// ── Чекбокс ──
+function toggleRemember() {
+  rememberMe = !rememberMe;
+  document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
+}
+
+function saveSession(cid, botName, session) {
+  if (!rememberMe) return;
+  try { localStorage.setItem(SKEY, JSON.stringify({cid, botName, session, exp: Date.now()+7*864e5})); } catch {}
+}
+
+function getSession() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SKEY));
+    if (!d || Date.now() > d.exp) { localStorage.removeItem(SKEY); return null; }
+    return d;
+  } catch { return null; }
+}
+
+window.addEventListener('DOMContentLoaded', async () => {
+  const params = new URLSearchParams(window.location.search);
+  const cid = params.get('cid');
+  const st = params.get('st');
+
+  if (cid && st) {
+    // Пришли из index.html с параметрами
+    CLIENT_ID = parseInt(cid);
+    SESSION = st;
+    const botName = decodeURIComponent(params.get('bn') || 'Магазин');
+    rememberMe = params.get('rem') === '1';
+    document.getElementById('shopName').textContent = botName;
+    saveSession(CLIENT_ID, botName, SESSION);
+    window.history.replaceState({}, '', '/shop/');
+    await showMain();
+  } else {
+    // Проверяем localStorage
+    const s = getSession();
+    if (s && s.session) {
+      CLIENT_ID = s.cid;
+      SESSION = s.session;
+      document.getElementById('shopName').textContent = s.botName || 'Магазин';
+      await showMain();
+    }
+  }
+});
+
+async function showMain() {
+  try {
+    await loadAll();
+    // Показываем приветствие
+    const ws = document.getElementById('welcomeScreen');
+    const shopNameEl = document.getElementById('welcomeShopName');
+    if (shopNameEl) shopNameEl.textContent = document.getElementById('shopName').textContent || '';
+    ws.style.display = 'flex';
+    // Через 1.5 секунды открываем главный экран
+    setTimeout(() => {
+      ws.style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
+    }, 1500);
+  } catch(e) {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('loginError').textContent = '❌ ' + (e.message || 'Ошибка загрузки данных');
+  }
 }
 
 
-async def get_cny_rate() -> float:
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://www.cbr-xml-daily.ru/daily_json.js",
-                timeout=aiohttp.ClientTimeout(total=5)
-            ) as resp:
-                data = await resp.json(content_type=None)
-                return round(data["Valute"]["CNY"]["Value"] / data["Valute"]["CNY"]["Nominal"], 2)
-    except:
-        return 13.0
 
+document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
+document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-async def get_currency_rates():
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                "https://www.cbr-xml-daily.ru/daily_json.js",
-                timeout=aiohttp.ClientTimeout(total=5)
-            ) as resp:
-                data = await resp.json(content_type=None)
-                cny = data["Valute"]["CNY"]["Value"] / data["Valute"]["CNY"]["Nominal"]
-                usd = data["Valute"]["USD"]["Value"] / data["Valute"]["USD"]["Nominal"]
-                kzt = data["Valute"]["KZT"]["Value"] / data["Valute"]["KZT"]["Nominal"]
-                return {"CNY": cny, "USD": usd, "KZT": kzt}
-    except:
-        return {"CNY": 13.0, "USD": 90.0, "KZT": 0.2}
-
-
-async def calculate(price_cny, weight, settings) -> str:
-    rates = await get_currency_rates()
-    price_rub = price_cny * rates["CNY"]
-
-    currency = settings.get("currency", "RUB")
-    sym = {"RUB": "₽", "USD": "$", "KZT": "₸"}.get(currency, "₽")
-
-    def to_display(rub_amount):
-        if currency == "USD":
-            return rub_amount / rates["USD"]
-        elif currency == "KZT":
-            return rub_amount / rates["KZT"]
-        return rub_amount
-
-    price_display = to_display(price_rub)
-
-    try:
-        enabled = json.loads(settings.get("tariff_enabled", "{}"))
-    except:
-        enabled = {}
-
-    tariff_mode = settings.get("tariff_mode", "mode1")
-    # mode1 = normal+express, mode2 = truck+air
-    if tariff_mode == "mode1":
-        show = {"normal": enabled.get("normal", True), "express": enabled.get("express", True),
-                "truck": False, "air": False}
-    else:
-        show = {"normal": False, "express": False,
-                "truck": enabled.get("truck", True), "air": enabled.get("air", True)}
-
-    lines = [
-        f"📊 <b>Расчёт стоимости доставки</b>\n\n"
-        f"💰 Цена товара: {price_cny} ¥ = {price_display:.0f} {sym}\n"
-        f"⚖️ Вес: {weight} кг\n"
-        f"💱 Курс юаня: {rates['CNY']:.2f} ₽\n"
-    ]
-
-    if show.get("normal"):
-        np_ = settings.get("normal_percent", 0.08) or 0.08
-        nk_ = settings.get("normal_per_kg", 200) or 200
-        svc = price_rub * np_ + weight * nk_
-        total = to_display(price_rub + svc)
-        lines.append(f"\n📦 <b>Обычный (35-50 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
-
-    if show.get("truck"):
-        tp_ = settings.get("truck_percent", 0.11) or 0.11
-        tk_ = settings.get("truck_per_kg", 350) or 350
-        svc = price_rub * tp_ + weight * tk_
-        total = to_display(price_rub + svc)
-        lines.append(f"\n🚛 <b>Авто (25-40 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
-
-    if show.get("air"):
-        ap_ = settings.get("air_percent", 0.17) or 0.17
-        ak_ = settings.get("air_per_kg", 700) or 700
-        svc = price_rub * ap_ + weight * ak_
-        total = to_display(price_rub + svc)
-        lines.append(f"\n✈️ <b>Авиа (7-14 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
-
-    if show.get("express"):
-        ep_ = settings.get("express_percent", 0.25) or 0.25
-        ek_ = settings.get("express_per_kg", 1200) or 1200
-        svc = price_rub * ep_ + weight * ek_
-        total = to_display(price_rub + svc)
-        lines.append(f"\n⚡ <b>Экспресс (5-7 дней)</b>\nУслуги: {to_display(svc):.0f} {sym} | Итого: <b>{total:.0f} {sym}</b>")
-
-    return "".join(lines)
-
-
-async def recognize_photo(photo_bytes: bytes, api_key: str) -> str | None:
-    """Распознаёт цену и вес на скриншоте через OpenAI."""
-    b64 = base64.b64encode(photo_bytes).decode('utf-8')
-    payload = {
-        "model": "gpt-4o-mini",
-        "max_tokens": 60,
-        "messages": [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "Identify the product price in Yuan (¥) and estimate its weight in kg. Return ONLY format: price;weight;name. Example: 25;0.2;AirPods. If not found return: ERROR"},
-                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{b64}", "detail": "low"}}
-            ]
-        }]
+async function doLogin() {
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const token = document.getElementById('tokenInput').value.trim();
+  const err = document.getElementById('loginError');
+  if (!code || !token) { err.textContent = '❌ Заполните оба поля'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
+  try {
+    const r = await fetch(API + '/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, token })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.client_id) {
+      err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
+      btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
-                "https://api.openai.com/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key.strip()}",
-                    "Content-Type": "application/json"
-                },
-                json=payload,
-                timeout=aiohttp.ClientTimeout(total=45)
-            ) as resp:
-                raw = await resp.text()
-                print(f"OpenAI status: {resp.status}, response: {raw[:200]}")
-                if resp.status != 200:
-                    return None
-                data = await resp.json(content_type=None)
-                result = data["choices"][0]["message"]["content"].strip()
-                print(f"OpenAI result: {result}")
-                return result
-    except Exception as e:
-        print(f"OpenAI request error: {type(e).__name__}: {e}")
-        return None
+    CLIENT_ID = data.client_id;
+    SESSION = data.session_token;
+    const botName = data.bot_name || 'Магазин';
+    document.getElementById('shopName').textContent = botName;
+    saveSession(CLIENT_ID, botName, SESSION);
+    await loadAll();
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch(e) {
+    err.textContent = '❌ ' + (e.message || 'Ошибка соединения');
+    btn.disabled = false; btn.textContent = 'Войти в панель';
+  }
+}
 
+function switchTab(name) {
+  const pages = ['catalog','calc','promos','faq','general'];
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', pages[i]===name));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+}
 
-async def get_track24_status(track_num: str, api_key: str) -> list:
-    """Получает последние 3 события посылки через Track24 API.
-    api_key формат: 'ключ|домен' например 'abc123|mysite.ru'
-    """
-    parts = api_key.strip().split("|")
-    key = parts[0].strip()
-    domain = parts[1].strip() if len(parts) > 1 else "track24.ru"
+function showToast(msg, type='ok') {
+  const t = document.getElementById('toast');
+  t.textContent = (type==='ok'?'✅ ':'❌ ') + msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className='toast', 2500);
+}
 
-    url = "https://api.track24.ru/tracking.json.php"
-    params = {"apikey": key, "domain": domain, "code": track_num, "pretty": "true"}
+async function applyToBot() {
+  try {
+    await saveDelivery();
+    await saveFaq();
+    await saveGeneral();
+    await saveContacts();
+    await apiPost('apply/'+CLIENT_ID, {section:'all'});
+    showToast('Применено к боту! 🚀');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch(e) { showToast('Ошибка: ' + e.message, 'err'); }
+}
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                url, params=params,
-                timeout=aiohttp.ClientTimeout(total=15)
-            ) as resp:
-                print(f"Track24 API status: {resp.status}, url: {resp.url}")
-                raw = await resp.text()
-                print(f"Track24 response: {raw[:300]}")
-                if resp.status != 200:
-                    return []
-                data = await resp.json(content_type=None)
-                if data.get("status") != "ok":
-                    print(f"Track24 error: {data.get('message', 'unknown')}")
-                    return []
-                events = data.get("data", {}).get("events", [])
-                result = []
-                for ev in events[:3]:
-                    dt = ev.get("operationDateTime", "")
-                    date = dt[:10] if len(dt) >= 10 else dt
-                    time_str = dt[11:16] if len(dt) >= 16 else ""
-                    place = ev.get("operationPlaceName", "")
-                    action = ev.get("operationAttribute", ev.get("operationType", ""))
-                    result.append(f"📍 <b>{place}</b> — {date} {time_str}\n{action}")
-                return result
-    except Exception as e:
-        print(f"Track24 API error: {type(e).__name__}: {e}")
-        return []
+async function apiGet(p) { const r = await fetch(API+'/api/'+p,{headers:{'x-session':SESSION}}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
 
+async function loadAll() {
+  const [s, p] = await Promise.all([apiGet('settings/'+CLIENT_ID), apiGet('promos/'+CLIENT_ID)]);
+  settings = s; promos = p.promos;
+  try { faqItems = JSON.parse(settings.faq_json||'[]'); } catch { faqItems = []; }
+  try { products = JSON.parse(settings.shop_products||'[]'); } catch { products = []; }
+  try { templates = JSON.parse(settings.shop_templates||'[]'); } catch { templates = []; }
+  renderProducts(); renderPromos(); renderFaqItems(); renderSuggested();
+  fillDelivery(); fillGeneral();
+}
 
-class CalcStates(StatesGroup):
-    waiting_price  = State()
-    waiting_weight = State()
+// ── КАТАЛОГ ──
+function openProductModal(id=null) {
+  editingProductId = id;
+  modalImg = '';
+  const modal = document.getElementById('productModal');
+  if (id) {
+    const p = products.find(x => x.id === id);
+    document.getElementById('modalTitle').textContent = 'Редактировать товар';
+    document.getElementById('saveProductBtnText').textContent = 'Сохранить изменения';
+    document.getElementById('modalName').value = p.name || '';
+    document.getElementById('modalDesc').value = p.desc || '';
+    document.getElementById('modalPrice').value = p.price || '';
+    document.getElementById('modalCurrency').value = p.currency || 'RUB';
+    if (p.img) {
+      modalImg = p.img;
+      const prev = document.getElementById('modalImgPreview');
+      prev.src = p.img; prev.classList.add('show');
+    }
+  } else {
+    document.getElementById('modalTitle').textContent = 'Новый товар';
+    document.getElementById('saveProductBtnText').textContent = 'Добавить товар';
+    document.getElementById('modalName').value = '';
+    document.getElementById('modalDesc').value = '';
+    document.getElementById('modalPrice').value = '';
+    document.getElementById('modalCurrency').value = 'RUB';
+    const prev = document.getElementById('modalImgPreview');
+    prev.src = ''; prev.classList.remove('show');
+  }
+  modal.classList.add('show');
+}
 
-class TrackStates(StatesGroup):
-    waiting_order = State()
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('show');
+  editingProductId = null;
+  modalImg = '';
+}
 
-class PromoStates(StatesGroup):
-    waiting_promo = State()
+function handleModalImg(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    modalImg = e.target.result;
+    const prev = document.getElementById('modalImgPreview');
+    prev.src = modalImg; prev.classList.add('show');
+  };
+  reader.readAsDataURL(file);
+}
 
+async function saveProduct() {
+  const name = document.getElementById('modalName').value.trim();
+  const price = document.getElementById('modalPrice').value.trim();
+  if (!name || !price) return showToast('Введи название и цену', 'err');
+  const product = {
+    id: editingProductId || Date.now(),
+    name,
+    desc: document.getElementById('modalDesc').value.trim(),
+    price,
+    currency: document.getElementById('modalCurrency').value,
+    img: modalImg,
+  };
+  if (editingProductId) {
+    const idx = products.findIndex(p => p.id === editingProductId);
+    products[idx] = product;
+  } else {
+    products.push(product);
+  }
+  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
+  renderProducts();
+  closeProductModal();
+  showToast(editingProductId ? 'Товар обновлён!' : 'Товар добавлен!');
+  tg.HapticFeedback.notificationOccurred('success');
+}
 
-def main_menu_kb():
-    kb = ReplyKeyboardBuilder()
-    kb.button(text="💸 Калькулятор стоимости")
-    kb.button(text="🔎 Отследить посылку")
-    kb.button(text="🤩 Оформить заказ")
-    kb.button(text="📚 Ответы на вопросы")
-    kb.button(text="❓ Остались вопросы")
-    kb.adjust(2, 2, 1)
-    return kb.as_markup(resize_keyboard=True)
+async function deleteProduct(id) {
+  products = products.filter(p => p.id !== id);
+  await apiPost('settings/'+CLIENT_ID, {shop_products: JSON.stringify(products)});
+  renderProducts();
+  showToast('Товар удалён');
+}
 
+function renderProducts() {
+  const el = document.getElementById('products-list');
+  if (!products.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🛍</div>Товаров пока нет<br><small>Нажмите кнопку выше чтобы добавить</small></div>';
+    return;
+  }
+  const sym = {RUB:'₽', USD:'$', KZT:'₸'};
+  el.innerHTML = products.map(p => `
+    <div class="product-item">
+      ${p.img ? `<img src="${p.img}" class="product-img show">` : ''}
+      <div class="product-body">
+        <div class="product-header">
+          <span class="product-name">${esc(p.name)}</span>
+          <span class="product-price">${esc(p.price)} ${sym[p.currency]||'₽'}</span>
+        </div>
+        ${p.desc ? `<div class="product-desc">${esc(p.desc)}</div>` : ''}
+        <div class="product-actions">
+          <button class="btn btn-ghost btn-sm" onclick="openProductModal(${p.id})">✏️ Изменить</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">🗑 Удалить</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
 
-def calc_menu_kb():
-    kb = ReplyKeyboardBuilder()
-    kb.button(text="💸 Рассчитать стоимость")
-    kb.button(text="🎟 У меня есть промокод")
-    kb.button(text="🏠 Главное меню")
-    kb.adjust(2, 1)
-    return kb.as_markup(resize_keyboard=True)
+// ── ШАБЛОНЫ ──
+function openTemplateModal() {
+  renderTemplates();
+  document.getElementById('templateModal').classList.add('show');
+}
+function closeTemplateModal() {
+  document.getElementById('templateModal').classList.remove('show');
+}
 
+function renderTemplates() {
+  const el = document.getElementById('templates-list');
+  if (!templates.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>Шаблонов нет<br><small>Создайте первый шаблон</small></div>';
+    return;
+  }
+  el.innerHTML = templates.map((t,i) => `
+    <div class="template-item" onclick="applyTemplate(${i})">
+      <div class="template-name">${esc(t.name)}</div>
+      <div class="template-preview">${esc(t.text)}</div>
+    </div>`).join('');
+}
 
-def back_kb():
-    kb = ReplyKeyboardBuilder()
-    kb.button(text="◀️ Назад")
-    return kb.as_markup(resize_keyboard=True)
+function applyTemplate(i) {
+  document.getElementById('modalDesc').value = templates[i].text;
+  closeTemplateModal();
+  showToast('Шаблон применён!');
+}
 
+async function createTemplate() {
+  const text = document.getElementById('modalDesc').value.trim();
+  if (!text) return showToast('Сначала введи текст описания', 'err');
+  const name = `Шаблон ${templates.length + 1}`;
+  templates.push({name, text});
+  await apiPost('settings/'+CLIENT_ID, {shop_templates: JSON.stringify(templates)});
+  showToast('Шаблон сохранён!');
+  renderTemplates();
+  tg.HapticFeedback.notificationOccurred('success');
+}
 
-async def send_msg_with_img(message: Message, text: str, img_b64: str, reply_markup=None):
-    if img_b64 and img_b64.startswith("data:image"):
-        try:
-            _, data = img_b64.split(",", 1)
-            img_bytes = base64.b64decode(data)
-            photo = BufferedInputFile(img_bytes, filename="image.jpg")
-            await message.answer_photo(photo, caption=text, parse_mode="HTML", reply_markup=reply_markup)
-            return
-        except Exception as e:
-            print(f"Image send error: {e}")
-    await message.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+// ── ДОСТАВКА ──
+function fillDelivery() {
+  document.getElementById('normal_price').value = settings.shop_normal_price || '';
+  document.getElementById('normal_days').value = settings.shop_normal_days || '';
+  document.getElementById('express_price').value = settings.shop_express_price || '';
+  document.getElementById('express_days').value = settings.shop_express_days || '';
+  document.getElementById('free_from').value = settings.shop_free_from || '';
+}
 
+async function saveDelivery() {
+  try {
+    await apiPost('settings/'+CLIENT_ID, {
+      shop_normal_price: parseFloat(document.getElementById('normal_price').value)||0,
+      shop_normal_days: parseInt(document.getElementById('normal_days').value)||0,
+      shop_express_price: parseFloat(document.getElementById('express_price').value)||0,
+      shop_express_days: parseInt(document.getElementById('express_days').value)||0,
+      shop_free_from: parseFloat(document.getElementById('free_from').value)||0,
+    });
+    showToast('Доставка сохранена!');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
 
-def make_shop_dispatcher(client_id: int):
-    dp = Dispatcher(storage=MemoryStorage())
+// ── ПРОМОКОДЫ ──
+function renderPromos() {
+  const el = document.getElementById('promos-list');
+  if (!promos.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🎟</div>Промокодов нет</div>'; return; }
+  el.innerHTML = promos.map(p => `
+    <div class="promo-item">
+      <span class="promo-code">${p.code}</span>
+      <div class="promo-right"><span class="promo-discount">-${p.discount}%</span>
+      <button class="btn btn-danger btn-sm" onclick="deletePromo('${p.code}')">✕</button></div>
+    </div>`).join('');
+}
+async function addPromo() {
+  const code = document.getElementById('new_promo_code').value.trim().toUpperCase();
+  const discount = parseInt(document.getElementById('new_promo_discount').value);
+  if (!code || !discount) return showToast('Заполни код и скидку', 'err');
+  try {
+    await apiPost('promos/'+CLIENT_ID, {code, discount});
+    promos.push({code, discount}); renderPromos();
+    document.getElementById('new_promo_code').value = '';
+    document.getElementById('new_promo_discount').value = '';
+    showToast('Промокод добавлен!');
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+async function deletePromo(code) {
+  try {
+    await apiDelete('promos/'+CLIENT_ID, {code});
+    promos = promos.filter(p => p.code !== code); renderPromos();
+    showToast('Промокод удалён');
+  } catch { showToast('Ошибка', 'err'); }
+}
 
-    @dp.message(CommandStart())
-    async def cmd_start(message: Message, state: FSMContext):
-        await state.clear()
-        settings = await get_settings(client_id)
-        text = settings.get("msg_welcome") or settings.get("welcome_text") or "Добро пожаловать! 👋"
-        img = settings.get("msg_welcome_img", "")
-        await send_msg_with_img(message, text, img, main_menu_kb())
+// ── FAQ ──
+function renderFaqItems() {
+  const el = document.getElementById('faq-list');
+  if (!faqItems.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">📚</div>Вопросов нет</div>'; return; }
+  el.innerHTML = faqItems.map((item,i) => `
+    <div class="faq-item">
+      <div class="faq-item-header"><span class="faq-num">Вопрос ${i+1}</span>
+      <button class="btn btn-danger btn-sm" onclick="removeFaqItem(${i})">✕</button></div>
+      <input type="text" placeholder="Вопрос..." value="${esc(item.question)}" oninput="faqItems[${i}].question=this.value">
+      <textarea placeholder="Ответ..." rows="3" oninput="faqItems[${i}].answer=this.value">${esc(item.answer)}</textarea>
+    </div>`).join('');
+}
+function renderSuggested() {
+  const el = document.getElementById('suggested-list');
+  const used = faqItems.map(f => f.question);
+  const avail = SUGGESTED_FAQ.filter(s => !used.includes(s.question));
+  if (!avail.length) { el.innerHTML = '<div style="font-size:12px;color:var(--muted);text-align:center;padding:10px 0;">Все вопросы добавлены ✅</div>'; return; }
+  el.innerHTML = avail.map(s => `<button class="btn-suggest" onclick="addSuggestedFaq('${esc(s.question)}','${esc(s.answer)}')">➕ ${s.question}</button>`).join('');
+}
+function addFaqItem() { faqItems.push({question:'',answer:''}); renderFaqItems(); renderSuggested(); }
+function removeFaqItem(i) { faqItems.splice(i,1); renderFaqItems(); renderSuggested(); }
+function addSuggestedFaq(q,a) { faqItems.push({question:q,answer:a}); renderFaqItems(); renderSuggested(); showToast('Вопрос добавлен!'); tg.HapticFeedback.impactOccurred('light'); }
+async function saveFaq() {
+  try { await apiPost('faq/'+CLIENT_ID, faqItems); showToast('FAQ сохранён!'); tg.HapticFeedback.notificationOccurred('success'); }
+  catch { showToast('Ошибка', 'err'); }
+}
 
-    @dp.message(F.text == "💸 Калькулятор стоимости")
-    async def calc_main(message: Message, state: FSMContext):
-        await state.clear()
-        settings = await get_settings(client_id)
-        text = settings.get("msg_calc") or "Выберите действие:"
-        img = settings.get("msg_calc_img", "")
-        await send_msg_with_img(message, text, img, calc_menu_kb())
+// ── ОБЩЕЕ ──
+function fillGeneral() {
+  document.getElementById('msg_welcome').value = settings.shop_msg_welcome || DEFAULT_MSGS.msg_welcome;
+  document.getElementById('msg_catalog').value = settings.shop_msg_catalog || DEFAULT_MSGS.msg_catalog;
+  document.getElementById('msg_delivery').value = settings.shop_msg_delivery || DEFAULT_MSGS.msg_delivery;
+  document.getElementById('msg_order').value = settings.shop_msg_order || DEFAULT_MSGS.msg_order;
+  document.getElementById('msg_support').value = settings.shop_msg_support || DEFAULT_MSGS.msg_support;
+  document.getElementById('manager_link').value = settings.manager_link || '';
+}
+async function updateToken() {
+  const token = document.getElementById('newTokenInput').value.trim();
+  if (!token || !token.includes(':')) { showToast('Неверный формат токена', 'err'); return; }
+  try {
+    await apiPost('token/'+CLIENT_ID, {token});
+    showToast('Токен обновлён!');
+    document.getElementById('newTokenInput').value = '';
+    tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
 
-    @dp.message(F.text == "🏠 Главное меню")
-    async def go_home(message: Message, state: FSMContext):
-        await state.clear()
-        await message.answer("Главное меню:", reply_markup=main_menu_kb())
+async function saveGeneral() {
+  try {
+    await apiPost('settings/'+CLIENT_ID, {
+      shop_msg_welcome: document.getElementById('msg_welcome').value.trim(),
+      shop_msg_catalog: document.getElementById('msg_catalog').value.trim(),
+      shop_msg_delivery: document.getElementById('msg_delivery').value.trim(),
+      shop_msg_order: document.getElementById('msg_order').value.trim(),
+      shop_msg_support: document.getElementById('msg_support').value.trim(),
+    });
+    showToast('Сообщения сохранены!'); tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
+async function saveContacts() {
+  try {
+    await apiPost('settings/'+CLIENT_ID, {manager_link: document.getElementById('manager_link').value.trim()});
+    showToast('Контакты сохранены!'); tg.HapticFeedback.notificationOccurred('success');
+  } catch { showToast('Ошибка', 'err'); }
+}
 
-    @dp.message(F.text == "💸 Рассчитать стоимость")
-    async def calc_start(message: Message, state: FSMContext):
-        settings = await get_settings(client_id)
-        ai_on = settings.get("ai_recognition", 0) == 1
-        ai_key = settings.get("openai_api", "")
-        await state.set_state(CalcStates.waiting_price)
-        if ai_on and ai_key:
-            await message.answer(
-                "Пришлите <b>скриншот товара</b> с ценой или введите цену в ¥:",
-                parse_mode="HTML",
-                reply_markup=back_kb()
-            )
-        else:
-            await message.answer("Введите цену товара в ¥:", reply_markup=back_kb())
-
-    @dp.message(CalcStates.waiting_price, F.photo)
-    async def calc_photo(message: Message, state: FSMContext):
-        settings = await get_settings(client_id)
-        ai_on = settings.get("ai_recognition", 0) == 1
-        ai_key = settings.get("openai_api", "")
-
-        if not ai_on or not ai_key:
-            await message.answer("Распознавание скриншотов отключено. Введите цену числом:")
-            return
-
-        msg = await message.answer("🧪 Анализируем скриншот...")
-
-        # Скачиваем фото
-        photo = message.photo[-1]
-        file_info = await message.bot.get_file(photo.file_id)
-        photo_bytes_io = await message.bot.download_file(file_info.file_path)
-        photo_bytes = photo_bytes_io.getvalue()
-
-        # Распознаём через aiohttp (не блокирует event loop)
-        result = await recognize_photo(photo_bytes, ai_key)
-
-        if not result or "ERROR" in result or ";" not in result:
-            await msg.edit_text("❌ Не удалось найти цену. Введите вручную:")
-            return
-
-        try:
-            parts = result.split(";", 2)
-            price = float(parts[0].strip())
-            weight = float(parts[1].strip())
-            name = parts[2].strip() if len(parts) > 2 else "Товар"
-
-            calc_result = await calculate(price, weight, settings)
-            await state.clear()
-            await msg.edit_text(
-                f"✅ <b>Распознано:</b> 📦 {name}\n\n{calc_result}",
-                parse_mode="HTML",
-                reply_markup=calc_menu_kb()
-            )
-        except Exception as e:
-            print(f"Parse error: {e}, result: {result}")
-            await msg.edit_text("❌ Ошибка обработки. Введите цену вручную:")
-
-    @dp.message(CalcStates.waiting_price, F.text)
-    async def calc_price(message: Message, state: FSMContext):
-        if message.text == "◀️ Назад":
-            await state.clear()
-            settings = await get_settings(client_id)
-            text = settings.get("msg_calc") or "Выберите действие:"
-            await message.answer(text, reply_markup=calc_menu_kb())
-            return
-        try:
-            price = float(message.text.replace(',', '.'))
-            await state.update_data(price=price)
-            await state.set_state(CalcStates.waiting_weight)
-            await message.answer("Введите вес товара в кг (например: 1.5):")
-        except ValueError:
-            await message.answer("Введите число, например: 299")
-
-    @dp.message(CalcStates.waiting_weight, F.text)
-    async def calc_weight(message: Message, state: FSMContext):
-        if message.text == "◀️ Назад":
-            await state.set_state(CalcStates.waiting_price)
-            await message.answer("Введите цену товара в ¥:")
-            return
-        try:
-            weight = float(message.text.replace(',', '.'))
-            data = await state.get_data()
-            settings = await get_settings(client_id)
-            result = await calculate(data["price"], weight, settings)
-            await state.clear()
-            await message.answer(result, parse_mode="HTML", reply_markup=calc_menu_kb())
-        except ValueError:
-            await message.answer("Введите число, например: 1.5")
-
-    @dp.message(F.text == "🎟 У меня есть промокод")
-    async def promo_start(message: Message, state: FSMContext):
-        await state.set_state(PromoStates.waiting_promo)
-        await message.answer("Введите промокод:", reply_markup=back_kb())
-
-    @dp.message(PromoStates.waiting_promo)
-    async def promo_check(message: Message, state: FSMContext):
-        if message.text == "◀️ Назад":
-            await state.clear()
-            await message.answer("Выберите действие:", reply_markup=calc_menu_kb())
-            return
-        discount = await check_promo(client_id, message.text.strip())
-        await state.clear()
-        if discount:
-            await message.answer(
-                f"✅ Промокод активирован! Скидка: <b>{discount}%</b>",
-                parse_mode="HTML", reply_markup=calc_menu_kb()
-            )
-        else:
-            await message.answer("❌ Промокод не найден.", reply_markup=calc_menu_kb())
-
-    @dp.message(F.text == "🔎 Отследить посылку")
-    async def track_start(message: Message, state: FSMContext):
-        await state.set_state(TrackStates.waiting_order)
-        await message.answer("Введите номер заказа:", reply_markup=back_kb())
-
-    @dp.message(TrackStates.waiting_order)
-    async def track_check(message: Message, state: FSMContext):
-        if message.text == "◀️ Назад":
-            await state.clear()
-            await message.answer("Главное меню:", reply_markup=main_menu_kb())
-            return
-
-        order_id = message.text.strip()
-        track = await get_track(client_id, order_id)
-        await state.clear()
-
-        if not track:
-            await message.answer("❌ Заказ не найден. Обратитесь к менеджеру.", reply_markup=main_menu_kb())
-            return
-
-        settings = await get_settings(client_id)
-        site = settings.get("tracking_site", "track24")
-        api_key = settings.get("track17_api", "")
-        base_url = TRACKING_URLS.get(site, TRACKING_URLS["track24"])
-        track_url = base_url + track
-
-        # Если есть AfterShip API — показываем статус
-        if api_key and site == "track24api":
-            msg = await message.answer("🔍 Запрашиваем статус посылки...")
-            events = await get_track24_status(track, api_key)
-            if events:
-                text = (
-                    f"📦 <b>Заказ {order_id}</b>\n"
-                    f"Трек-номер: <code>{track}</code>\n\n"
-                    f"<b>Последние события:</b>\n\n" +
-                    "\n\n".join(events) +
-                    f"\n\n<a href=\"{track_url}\">🔗 Подробнее</a>"
-                )
-                await msg.edit_text(text, parse_mode="HTML", reply_markup=main_menu_kb())
-            else:
-                await msg.edit_text(
-                    f"📦 <b>Заказ {order_id}</b>\n"
-                    f"Трек-номер: <code>{track}</code>\n\n"
-                    f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-                    parse_mode="HTML", reply_markup=main_menu_kb()
-                )
-        else:
-            await message.answer(
-                f"📦 <b>Заказ {order_id}</b>\n"
-                f"Трек-номер: <code>{track}</code>\n\n"
-                f"<a href=\"{track_url}\">🔗 Отследить посылку</a>",
-                parse_mode="HTML",
-                reply_markup=main_menu_kb()
-            )
-
-    @dp.message(F.text == "🤩 Оформить заказ")
-    async def order_msg(message: Message):
-        settings = await get_settings(client_id)
-        manager = settings.get("manager_link", "@manager")
-        text = settings.get("msg_order") or f"Оформить заказ: {manager} 👈\n\nОтправь скриншот товара или ссылку."
-        img = settings.get("msg_order_img", "")
-        await send_msg_with_img(message, text, img)
-
-    @dp.message(F.text == "❓ Остались вопросы")
-    async def support_msg(message: Message):
-        settings = await get_settings(client_id)
-        manager = settings.get("manager_link", "@manager")
-        text = settings.get("msg_support") or f"Напиши менеджеру: {manager}"
-        img = settings.get("msg_support_img", "")
-        await send_msg_with_img(message, text, img)
-
-    @dp.message(F.text == "📚 Ответы на вопросы")
-    async def faq_msg(message: Message):
-        settings = await get_settings(client_id)
-        try:
-            faq = json.loads(settings.get("faq_json", "[]"))
-        except:
-            faq = []
-        if not faq:
-            await message.answer("FAQ пока не заполнен.", reply_markup=main_menu_kb())
-            return
-        kb = InlineKeyboardBuilder()
-        for i, item in enumerate(faq):
-            kb.button(text=item["question"], callback_data=f"faq_{i}")
-        kb.adjust(1)
-        await message.answer("📚 Выберите вопрос:", reply_markup=kb.as_markup())
-
-    @dp.callback_query(F.data.startswith("faq_"))
-    async def faq_answer(callback: CallbackQuery):
-        settings = await get_settings(client_id)
-        try:
-            faq = json.loads(settings.get("faq_json", "[]"))
-            idx = int(callback.data.split("_")[1])
-            item = faq[idx]
-            await callback.message.answer(
-                f"❓ <b>{item['question']}</b>\n\n{item['answer']}",
-                parse_mode="HTML"
-            )
-        except:
-            await callback.message.answer("Ошибка загрузки FAQ.")
-        await callback.answer()
-
-    return dp
-
-
-async def main():
-    await init_db()
-    # get_all_active_bots уже фильтрует: только активные и с реальным токеном
-    clients = await get_all_active_bots()
-
-    if not clients:
-        print("⚠️ Нет активных клиентов с токенами.")
-        return
-
-    tasks = []
-    for client in clients:
-        try:
-            bot = Bot(token=client["bot_token"])
-            dp = make_shop_dispatcher(client["id"])
-            tasks.append(dp.start_polling(bot))
-            print(f"🛍 Запущен бот: {client['bot_name']}")
-        except Exception as e:
-            print(f"❌ Ошибка запуска {client['bot_name']}: {e}")
-
-    if not tasks:
-        print("⚠️ Нет ботов с валидными токенами.")
-        return
-
-    print(f"✅ Запущено {len(tasks)} ботов")
-    await asyncio.gather(*tasks)
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
+function esc(str) { return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+</script>
+</body>
+</html>
