@@ -1,9 +1,11 @@
-# Настройки ГЛАВНОГО бота (только мой)
-# Токен BotFather
-MASTER_TOKEN = "8145545867:AAF55NVhY4bpmg_JHP0OLKS-9KLMW12BeeE"  
+import os
 
-# Мой Telegram-ID
-MASTER_IDS = [1075039744]
+# Токен главного бота — берётся из переменной окружения
+MASTER_TOKEN = os.environ["MASTER_TOKEN"]
 
-# URL мини апа, после деплоя на railway
-MINI_APP_URL = "https://твой-проект.railway.app/app"
+# Твой Telegram ID (можно несколько через запятую в .env: "123,456")
+_ids = os.environ.get("MASTER_IDS", "")
+MASTER_IDS = [int(x.strip()) for x in _ids.split(",") if x.strip()]
+
+# URL мини-апа после деплоя на Railway
+MINI_APP_URL = os.environ.get("MINI_APP_URL", "https://your-project.railway.app/app")

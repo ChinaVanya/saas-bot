@@ -29,6 +29,13 @@ class RegisterStates(StatesGroup):
     access_code = State()
 
 
+# Отдельная группа состояний для операций над клиентами (не строки!)
+class ManageStates(StatesGroup):
+    deactivate_waiting = State()
+    restore_waiting    = State()
+    delete_waiting     = State()
+
+
 def is_master(user_id):
     return user_id in MASTER_IDS
 
@@ -70,7 +77,8 @@ async def cb_list_clients(callback, state: FSMContext):
     for cl in clients:
         status = "✅" if cl["is_active"] else "🚫"
         date = str(cl["created_at"])[:10]
-        lines.append(f"{status} @{cl['username']} — <b>{cl['bot_name']}</b>\n   📅 {date}")
+        ctype = "📦 Карго" if cl.get("client_type") == "cargo" else "🛍 Магазин"
+        lines.append(f"{status} @{cl['username']} — <b>{cl['bot_name']}</b> ({ctype})\n   📅 {date}")
     await callback.message.answer(
         f"📋 <b>Клиенты ({len(clients)}):</b>\n\n" + "\n\n".join(lines),
         parse_mode="HTML"
@@ -83,10 +91,9 @@ async def cb_add_client(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
     await state.set_state(RegisterStates.client_type)
-    from aiogram.utils.keyboard import InlineKeyboardBuilder as IKB
-    kb = IKB()
+    kb = InlineKeyboardBuilder()
     kb.button(text="📦 Посредник (карго)", callback_data="type_cargo")
-    kb.button(text="🛍 Личный магазин", callback_data="type_shop")
+    kb.button(text="🛍 Личный магазин",    callback_data="type_shop")
     kb.adjust(1)
     await callback.message.answer(
         "➕ <b>Регистрация клиента</b>\n\n<b>Шаг 1/4.</b> Выбери тип клиента:",
@@ -94,7 +101,6 @@ async def cb_add_client(callback, state: FSMContext):
         reply_markup=kb.as_markup()
     )
     await callback.answer()
-
 
 
 @dp.callback_query(F.data.startswith("type_"))
@@ -110,6 +116,7 @@ async def reg_type(callback, state: FSMContext):
         parse_mode="HTML"
     )
     await callback.answer()
+
 
 @dp.message(RegisterStates.username)
 async def reg_username(message: Message, state: FSMContext):
@@ -137,7 +144,6 @@ async def reg_bot_name(message: Message, state: FSMContext):
 async def reg_access_code(message: Message, state: FSMContext):
     code = message.text.strip().upper()
     data = await state.get_data()
-    # Токен пустой — клиент введёт его сам в Mini App
     ctype = data.get('client_type', 'cargo')
     success = await add_client(
         username=data["username"],
@@ -152,9 +158,9 @@ async def reg_access_code(message: Message, state: FSMContext):
             f"✅ <b>Клиент зарегистрирован!</b>\n\n"
             f"👤 Username: @{data['username']}\n"
             f"🏪 Магазин: {data['bot_name']}\n"
-            f"📋 Тип: {'📦 Посредник' if data.get('client_type','cargo')=='cargo' else '🛍 Личный магазин'}\n"
+            f"📋 Тип: {'📦 Посредник' if ctype == 'cargo' else '🛍 Личный магазин'}\n"
             f"🔑 Код доступа: <code>{code}</code>\n\n"
-            f"📲 Клиент открывает @pandatest15_bot → вводит код → "
+            f"📲 Клиент открывает бота → вводит код → "
             f"вводит токен своего бота → настраивает всё в Mini App.",
             parse_mode="HTML",
             reply_markup=master_menu_kb()
@@ -168,7 +174,7 @@ async def cb_deactivate(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
     await callback.message.answer("🚫 Введи username клиента для отключения:")
-    await state.set_state("deactivate_waiting")
+    await state.set_state(ManageStates.deactivate_waiting)
     await callback.answer()
 
 
@@ -177,7 +183,7 @@ async def cb_restore(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
     await callback.message.answer("✅ Введи username клиента для восстановления:")
-    await state.set_state("restore_waiting")
+    await state.set_state(ManageStates.restore_waiting)
     await callback.answer()
 
 
@@ -186,34 +192,47 @@ async def cb_delete(callback, state: FSMContext):
     if not is_master(callback.from_user.id):
         return
     await callback.message.answer("🗑 Введи username клиента для УДАЛЕНИЯ\n\n⚠️ Все данные удалятся безвозвратно!")
-    await state.set_state("delete_waiting")
+    await state.set_state(ManageStates.delete_waiting)
     await callback.answer()
 
 
-@dp.message(F.text)
-async def text_input_handler(message: Message, state: FSMContext):
-    current = await state.get_state()
+@dp.message(ManageStates.deactivate_waiting)
+async def do_deactivate(message: Message, state: FSMContext):
     if not is_master(message.from_user.id):
         return
-    if current not in ("deactivate_waiting", "restore_waiting", "delete_waiting"):
-        return
-
     username = message.text.strip().lstrip("@").lower()
+    success = await deactivate_client(username)
+    await state.clear()
+    await message.answer(
+        f"✅ @{username} отключён." if success else f"❌ @{username} не найден.",
+        reply_markup=master_menu_kb()
+    )
 
-    if current == "deactivate_waiting":
-        success = await deactivate_client(username)
-        await state.clear()
-        await message.answer(f"✅ @{username} отключён." if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
 
-    elif current == "restore_waiting":
-        success = await restore_client(username)
-        await state.clear()
-        await message.answer(f"✅ @{username} восстановлен!" if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
+@dp.message(ManageStates.restore_waiting)
+async def do_restore(message: Message, state: FSMContext):
+    if not is_master(message.from_user.id):
+        return
+    username = message.text.strip().lstrip("@").lower()
+    success = await restore_client(username)
+    await state.clear()
+    await message.answer(
+        f"✅ @{username} восстановлен!" if success else f"❌ @{username} не найден.",
+        reply_markup=master_menu_kb()
+    )
 
-    elif current == "delete_waiting":
-        success = await delete_client(username)
-        await state.clear()
-        await message.answer(f"🗑 @{username} удалён." if success else f"❌ @{username} не найден.", reply_markup=master_menu_kb())
+
+@dp.message(ManageStates.delete_waiting)
+async def do_delete(message: Message, state: FSMContext):
+    if not is_master(message.from_user.id):
+        return
+    username = message.text.strip().lstrip("@").lower()
+    success = await delete_client(username)
+    await state.clear()
+    await message.answer(
+        f"🗑 @{username} удалён." if success else f"❌ @{username} не найден.",
+        reply_markup=master_menu_kb()
+    )
 
 
 async def main():
