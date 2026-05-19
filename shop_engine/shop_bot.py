@@ -14,7 +14,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.utils.keyboard import ReplyKeyboardBuilder, InlineKeyboardBuilder
 
-from database.db import init_db, get_all_clients, get_settings, check_promo, get_track, get_conn
+from database.db import init_db, get_all_active_bots, get_settings, check_promo, get_track
 
 import aiohttp
 
@@ -491,23 +491,17 @@ def make_shop_dispatcher(client_id: int):
 
 async def main():
     await init_db()
-    clients = await get_all_clients()
-    active = [c for c in clients if c["is_active"]]
+    # get_all_active_bots уже фильтрует: только активные и с реальным токеном
+    clients = await get_all_active_bots()
 
-    if not active:
-        print("⚠️ Нет активных клиентов.")
+    if not clients:
+        print("⚠️ Нет активных клиентов с токенами.")
         return
 
     tasks = []
-    for client in active:
-        conn = await get_conn()
-        row = await conn.fetchrow("SELECT bot_token FROM clients WHERE id=$1", client["id"])
-        await conn.close()
-        if not row or not row["bot_token"] or row["bot_token"].startswith("pending_"):
-            print(f"⚠️ Пропуск {client['bot_name']} — нет токена")
-            continue
+    for client in clients:
         try:
-            bot = Bot(token=row["bot_token"])
+            bot = Bot(token=client["bot_token"])
             dp = make_shop_dispatcher(client["id"])
             tasks.append(dp.start_polling(bot))
             print(f"🛍 Запущен бот: {client['bot_name']}")
