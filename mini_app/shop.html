@@ -338,10 +338,9 @@
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-let INIT_DATA = tg.initData || 'dev'; // будет заменён session_token после входа
 const API = '';
-const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
-const SKEY = 'shop_' + TG_USERNAME;
+let SESSION = '';
+const SKEY = 'shop_session';
 
 let CLIENT_ID = null, settings = {}, promos = [], faqItems = [];
 let rememberMe = false;
@@ -370,14 +369,9 @@ function toggleRemember() {
   document.getElementById('rememberBox').className = 'custom-checkbox' + (rememberMe ? ' checked' : '');
 }
 
-function saveSession(cid, botName, sessionToken) {
+function saveSession(cid, botName, session) {
   if (!rememberMe) return;
-  try {
-    localStorage.setItem(SKEY, JSON.stringify({
-      cid, botName, sessionToken,
-      exp: Date.now() + 7*864e5
-    }));
-  } catch {}
+  try { localStorage.setItem(SKEY, JSON.stringify({cid, botName, session, exp: Date.now()+7*864e5})); } catch {}
 }
 
 function getSession() {
@@ -389,19 +383,17 @@ function getSession() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-  // Проверяем передачу авторизации из index.html через URL параметры
+  // Авторизация передана из index.html через URL
   try {
     const params = new URLSearchParams(window.location.search);
     const cid = params.get('cid');
     if (cid) {
       CLIENT_ID = parseInt(cid);
       const botName = params.get('bn') || 'Магазин';
-      const sessionToken = params.get('st') || '';
+      SESSION = params.get('st') || '';
       rememberMe = params.get('rem') === '1';
-      INIT_DATA = sessionToken;
       document.getElementById('shopName').textContent = botName;
-      saveSession(CLIENT_ID, botName, sessionToken);
-      // Чистим URL
+      saveSession(CLIENT_ID, botName, SESSION);
       window.history.replaceState({}, '', '/shop');
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
@@ -409,11 +401,12 @@ window.addEventListener('DOMContentLoaded', async () => {
       return;
     }
   } catch {}
+  // Восстановление из localStorage
   try {
     const s = getSession();
-    if (s && s.sessionToken) {
+    if (s && s.session) {
       CLIENT_ID = s.cid;
-      INIT_DATA = s.sessionToken;
+      SESSION = s.session;
       document.getElementById('shopName').textContent = s.botName || 'Магазин';
       await loadAll();
       document.getElementById('loginScreen').style.display = 'none';
@@ -435,9 +428,10 @@ async function doLogin() {
   const btn = document.getElementById('loginBtn');
   btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
   try {
-    const r = await fetch(API+'/api/auth', {
-      method:'POST', headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},
-      body: JSON.stringify({code, username:TG_USERNAME, token})
+    const r = await fetch(API + '/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, token })
     });
     const data = await r.json();
     if (!r.ok || !data.client_id) {
@@ -445,10 +439,10 @@ async function doLogin() {
       btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
     CLIENT_ID = data.client_id;
-    INIT_DATA = data.session_token;
+    SESSION = data.session_token;
     const botName = data.bot_name || 'Магазин';
     document.getElementById('shopName').textContent = botName;
-    saveSession(CLIENT_ID, botName, data.session_token);
+    saveSession(CLIENT_ID, botName, SESSION);
     await loadAll();
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
@@ -473,9 +467,9 @@ function showToast(msg, type='ok') {
   setTimeout(() => t.className='toast', 2500);
 }
 
-async function apiGet(p) { const r = await fetch(API+'/api/'+p,{headers:{'x-init-data':INIT_DATA}}); if(!r.ok) throw new Error(); return r.json(); }
-async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
-async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiGet(p) { const r = await fetch(API+'/api/'+p,{headers:{'x-session':SESSION}}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiPost(p,b) { const r = await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
+async function apiDelete(p,b) { const r = await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)}); if(!r.ok) throw new Error(); return r.json(); }
 
 async function loadAll() {
   const [s, p] = await Promise.all([apiGet('settings/'+CLIENT_ID), apiGet('promos/'+CLIENT_ID)]);

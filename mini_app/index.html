@@ -165,7 +165,6 @@
   <div class="login-logo">🤖</div>
   <div class="login-title">Панель управления</div>
   <div class="login-subtitle">Введите код доступа и токен вашего бота</div>
-  <div id="usernameInfo" style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;"></div>
   <div class="login-hint">Код доступа</div>
   <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
   <div class="login-hint">Токен бота (от @BotFather)</div>
@@ -495,18 +494,9 @@
 <script>
 const tg = window.Telegram.WebApp;
 tg.expand();
-let INIT_DATA = tg.initData || 'dev'; // будет заменён session_token после входа
 const API = '';
-const TG_USERNAME = tg.initDataUnsafe?.user?.username || '';
-const SKEY = 'bp_' + (TG_USERNAME || 'user');
-
-// Показываем username клиенту чтобы он знал что нужно сообщить владельцу бота
-const uInfo = document.getElementById('usernameInfo');
-if (TG_USERNAME) {
-  uInfo.innerHTML = '👤 Ваш Telegram: <b>@' + TG_USERNAME + '</b><br><span style="font-size:11px">Именно этот username должен быть указан при регистрации</span>';
-} else {
-  uInfo.innerHTML = '⚠️ <b>У вас нет username в Telegram!</b><br><span style="font-size:11px">Зайдите в Настройки Telegram → установите имя пользователя</span>';
-}
+let SESSION = '';
+const SKEY = 'bp_session';
 
 let CLIENT_ID=null, settings={}, promos=[], tracks=[], faqItems=[];
 let rememberMe=false;
@@ -565,79 +555,71 @@ function toggleRemember() {
   document.getElementById('rememberBox').className='custom-checkbox'+(rememberMe?' checked':'');
 }
 
-function saveSession(cid,botName,sessionToken) {
-  if(!rememberMe) return;
-  try {
-    localStorage.setItem(SKEY,JSON.stringify({
-      cid,botName,sessionToken,
-      exp:Date.now()+7*864e5
-    }));
-  } catch {}
+function saveSession(cid, botName, session) {
+  if (!rememberMe) return;
+  try { localStorage.setItem(SKEY, JSON.stringify({cid, botName, session, exp: Date.now()+7*864e5})); } catch {}
 }
 
 function getSession() {
   try {
-    const d=JSON.parse(localStorage.getItem(SKEY));
-    if(!d||Date.now()>d.exp){localStorage.removeItem(SKEY);return null;}
+    const d = JSON.parse(localStorage.getItem(SKEY));
+    if (!d || Date.now() > d.exp) { localStorage.removeItem(SKEY); return null; }
     return d;
-  } catch {return null;}
+  } catch { return null; }
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
   loadRates();
   try {
-    const s=getSession();
-    if(s&&s.sessionToken){
-      CLIENT_ID=s.cid;
-      INIT_DATA=s.sessionToken;
-      document.getElementById('botName').textContent=s.botName||'Мой магазин';
+    const s = getSession();
+    if (s && s.session) {
+      CLIENT_ID = s.cid;
+      SESSION = s.session;
+      document.getElementById('botName').textContent = s.botName || 'Мой магазин';
       await loadAll();
-      document.getElementById('loginScreen').style.display='none';
-      document.getElementById('mainScreen').style.display='block';
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('mainScreen').style.display = 'block';
     }
-  } catch {localStorage.removeItem(SKEY);}
+  } catch { localStorage.removeItem(SKEY); }
 });
 
 document.getElementById('codeInput').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('tokenInput').focus();});
 document.getElementById('tokenInput').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
 
 async function doLogin() {
-  const code=document.getElementById('codeInput').value.trim().toUpperCase();
-  const token=document.getElementById('tokenInput').value.trim();
-  const err=document.getElementById('loginError');
-  if(!code||!token){err.textContent='❌ Заполните оба поля';return;}
-  const btn=document.getElementById('loginBtn');
-  btn.disabled=true;btn.textContent='Проверяем...';err.textContent='';
+  const code = document.getElementById('codeInput').value.trim().toUpperCase();
+  const token = document.getElementById('tokenInput').value.trim();
+  const err = document.getElementById('loginError');
+  if (!code || !token) { err.textContent = '❌ Заполните оба поля'; return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Проверяем...'; err.textContent = '';
   try {
-    if (!TG_USERNAME) {err.textContent='❌ У вас нет username в Telegram. Установите его в настройках.';btn.disabled=false;btn.textContent='Войти в панель';return;}
-    const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify({code,username:TG_USERNAME,token})});
-    const data=await r.json();
-    if(!r.ok||!data.client_id){
-      err.innerHTML='❌ '+(data.detail||'Неверный код')+'<br><span style="font-size:11px;opacity:.8">Ваш username: @'+TG_USERNAME+'<br>Убедитесь что именно он указан при регистрации</span>';
-      btn.disabled=false;btn.textContent='Войти в панель';return;
+    const r = await fetch(API + '/api/auth', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, token })
+    });
+    const data = await r.json();
+    if (!r.ok || !data.client_id) {
+      err.textContent = '❌ ' + (data.detail || 'Неверный код доступа');
+      btn.disabled = false; btn.textContent = 'Войти в панель'; return;
     }
-    CLIENT_ID=data.client_id;
-    INIT_DATA=data.session_token;  // теперь шлём session_token вместо tg.initData
-    const botName=data.bot_name||'Мой магазин';
-    const clientType=data.client_type||'cargo';
-    // Если личный магазин — переходим на shop.html
-    if(clientType==='shop'){
-      const params=new URLSearchParams({
-        cid:CLIENT_ID,
-        bn:botName,
-        st:data.session_token,
-        rem:rememberMe?'1':'0'
-      });
-      window.location.href='/shop?'+params.toString();
+    CLIENT_ID = data.client_id;
+    SESSION = data.session_token;
+    const botName = data.bot_name || 'Мой магазин';
+    const clientType = data.client_type || 'cargo';
+    if (clientType === 'shop') {
+      const params = new URLSearchParams({ cid: CLIENT_ID, bn: botName, st: SESSION, rem: rememberMe ? '1' : '0' });
+      window.location.href = '/shop?' + params.toString();
       return;
     }
-    document.getElementById('botName').textContent=botName;
-    saveSession(CLIENT_ID,botName,data.session_token);
+    document.getElementById('botName').textContent = botName;
+    saveSession(CLIENT_ID, botName, SESSION);
     await loadAll();
-    document.getElementById('loginScreen').style.display='none';
-    document.getElementById('mainScreen').style.display='block';
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
-  } catch {err.textContent='❌ Ошибка соединения';btn.disabled=false;btn.textContent='Войти в панель';}
+  } catch { err.textContent = '❌ Ошибка соединения'; btn.disabled = false; btn.textContent = 'Войти в панель'; }
 }
 
 function switchTab(name) {
@@ -654,9 +636,9 @@ function showToast(msg,type='ok') {
   setTimeout(()=>t.className='toast',2500);
 }
 
-async function apiGet(p){const r=await fetch(API+'/api/'+p,{headers:{'x-init-data':INIT_DATA}});if(!r.ok)throw new Error();return r.json();}
-async function apiPost(p,b){const r=await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)});if(!r.ok)throw new Error();return r.json();}
-async function apiDelete(p,b){const r=await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify(b)});if(!r.ok)throw new Error();return r.json();}
+async function apiGet(p){const r=await fetch(API+'/api/'+p,{headers:{'x-session':SESSION}});if(!r.ok)throw new Error();return r.json();}
+async function apiPost(p,b){const r=await fetch(API+'/api/'+p,{method:'POST',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)});if(!r.ok)throw new Error();return r.json();}
+async function apiDelete(p,b){const r=await fetch(API+'/api/'+p,{method:'DELETE',headers:{'Content-Type':'application/json','x-session':SESSION},body:JSON.stringify(b)});if(!r.ok)throw new Error();return r.json();}
 
 async function loadAll() {
   const [s,p,tr]=await Promise.all([apiGet('settings/'+CLIENT_ID),apiGet('promos/'+CLIENT_ID),apiGet('tracks/'+CLIENT_ID)]);

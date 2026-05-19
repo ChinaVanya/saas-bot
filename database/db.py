@@ -5,26 +5,19 @@ import json
 
 DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
-# Глобальный пул соединений (создаётся один раз при старте)
-_pool: asyncpg.Pool | None = None
+_pool = None
 
-
-async def get_pool() -> asyncpg.Pool:
-    """Возвращает пул соединений, создавая его при первом вызове."""
+async def get_pool():
     global _pool
     if _pool is None:
         if not DATABASE_URL:
-            raise RuntimeError(
-                "Переменная DATABASE_URL не задана! "
-                "Добавь её в .env или в настройки Railway."
-            )
+            raise RuntimeError("DATABASE_URL не задан! Добавь в переменные Railway.")
         _pool = await asyncpg.create_pool(DATABASE_URL, min_size=2, max_size=10)
     return _pool
 
 
 async def init_db():
     pool = await get_pool()
-
     async with pool.acquire() as conn:
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS clients (
@@ -38,7 +31,6 @@ async def init_db():
                 client_type TEXT DEFAULT 'cargo'
             )
         """)
-
         try:
             await conn.execute("ALTER TABLE clients ADD COLUMN IF NOT EXISTS client_type TEXT DEFAULT 'cargo'")
         except Exception:
@@ -78,39 +70,39 @@ async def init_db():
         """)
 
         new_columns = [
-            ("normal_percent",     "REAL DEFAULT 0.08"),
-            ("normal_per_kg",      "REAL DEFAULT 200"),
-            ("tariff_mode",        "TEXT DEFAULT 'mode1'"),
-            ("currency",           "TEXT DEFAULT 'RUB'"),
-            ("tracking_site",      "TEXT DEFAULT 'track24'"),
-            ("track17_api",        "TEXT DEFAULT ''"),
-            ("openai_api",         "TEXT DEFAULT ''"),
-            ("ai_recognition",     "INTEGER DEFAULT 0"),
-            ("msg_welcome",        "TEXT DEFAULT ''"),
-            ("msg_calc",           "TEXT DEFAULT ''"),
-            ("msg_order",          "TEXT DEFAULT ''"),
-            ("msg_support",        "TEXT DEFAULT ''"),
-            ("msg_welcome_img",    "TEXT DEFAULT ''"),
-            ("msg_calc_img",       "TEXT DEFAULT ''"),
-            ("msg_order_img",      "TEXT DEFAULT ''"),
-            ("msg_support_img",    "TEXT DEFAULT ''"),
-            ("express_percent",    "REAL DEFAULT 0.25"),
-            ("express_per_kg",     "REAL DEFAULT 1200"),
-            ("tariff_enabled",     "TEXT DEFAULT '{}'"),
-            ("shop_products",      "TEXT DEFAULT '[]'"),
-            ("shop_delivery_price","REAL DEFAULT 350"),
-            ("shop_delivery_days", "INTEGER DEFAULT 7"),
-            ("shop_express_price", "REAL DEFAULT 700"),
-            ("shop_express_days",  "INTEGER DEFAULT 2"),
-            ("shop_free_from",     "REAL DEFAULT 0"),
-            ("shop_normal_price",  "REAL DEFAULT 350"),
-            ("shop_normal_days",   "INTEGER DEFAULT 14"),
-            ("shop_templates",     "TEXT DEFAULT '[]'"),
-            ("shop_msg_welcome",   "TEXT DEFAULT ''"),
-            ("shop_msg_catalog",   "TEXT DEFAULT ''"),
-            ("shop_msg_delivery",  "TEXT DEFAULT ''"),
-            ("shop_msg_order",     "TEXT DEFAULT ''"),
-            ("shop_msg_support",   "TEXT DEFAULT ''"),
+            ("normal_percent",      "REAL DEFAULT 0.08"),
+            ("normal_per_kg",       "REAL DEFAULT 200"),
+            ("tariff_mode",         "TEXT DEFAULT 'mode1'"),
+            ("currency",            "TEXT DEFAULT 'RUB'"),
+            ("tracking_site",       "TEXT DEFAULT 'track24'"),
+            ("track17_api",         "TEXT DEFAULT ''"),
+            ("openai_api",          "TEXT DEFAULT ''"),
+            ("ai_recognition",      "INTEGER DEFAULT 0"),
+            ("msg_welcome",         "TEXT DEFAULT ''"),
+            ("msg_calc",            "TEXT DEFAULT ''"),
+            ("msg_order",           "TEXT DEFAULT ''"),
+            ("msg_support",         "TEXT DEFAULT ''"),
+            ("msg_welcome_img",     "TEXT DEFAULT ''"),
+            ("msg_calc_img",        "TEXT DEFAULT ''"),
+            ("msg_order_img",       "TEXT DEFAULT ''"),
+            ("msg_support_img",     "TEXT DEFAULT ''"),
+            ("express_percent",     "REAL DEFAULT 0.25"),
+            ("express_per_kg",      "REAL DEFAULT 1200"),
+            ("tariff_enabled",      "TEXT DEFAULT '{}'"),
+            ("shop_products",       "TEXT DEFAULT '[]'"),
+            ("shop_delivery_price", "REAL DEFAULT 350"),
+            ("shop_delivery_days",  "INTEGER DEFAULT 7"),
+            ("shop_express_price",  "REAL DEFAULT 700"),
+            ("shop_express_days",   "INTEGER DEFAULT 2"),
+            ("shop_free_from",      "REAL DEFAULT 0"),
+            ("shop_normal_price",   "REAL DEFAULT 350"),
+            ("shop_normal_days",    "INTEGER DEFAULT 14"),
+            ("shop_templates",      "TEXT DEFAULT '[]'"),
+            ("shop_msg_welcome",    "TEXT DEFAULT ''"),
+            ("shop_msg_catalog",    "TEXT DEFAULT ''"),
+            ("shop_msg_delivery",   "TEXT DEFAULT ''"),
+            ("shop_msg_order",      "TEXT DEFAULT ''"),
+            ("shop_msg_support",    "TEXT DEFAULT ''"),
         ]
         for col, definition in new_columns:
             try:
@@ -127,7 +119,6 @@ async def init_db():
                 UNIQUE(client_id, code)
             )
         """)
-
         await conn.execute("""
             CREATE TABLE IF NOT EXISTS tracks (
                 id        SERIAL PRIMARY KEY,
@@ -141,7 +132,7 @@ async def init_db():
     print("✅ PostgreSQL база инициализирована")
 
 
-async def add_client(username, access_code, bot_token, bot_name, client_type='cargo') -> bool:
+async def add_client(username, access_code, bot_token, bot_name, client_type='cargo'):
     try:
         pool = await get_pool()
         async with pool.acquire() as conn:
@@ -157,12 +148,13 @@ async def add_client(username, access_code, bot_token, bot_name, client_type='ca
         return False
 
 
-async def get_client_by_code_and_username(code, username):
+async def get_client_by_code(code: str):
+    """Ищет клиента только по коду доступа."""
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow(
-            "SELECT * FROM clients WHERE access_code=$1 AND username=$2 AND is_active=1",
-            code.upper(), username.lower().lstrip("@")
+            "SELECT * FROM clients WHERE access_code=$1 AND is_active=1",
+            code.upper()
         )
     return dict(row) if row else None
 
@@ -176,21 +168,31 @@ async def get_all_clients():
     return [dict(r) for r in rows]
 
 
-async def deactivate_client(username) -> bool:
+async def get_all_active_bots():
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        rows = await conn.fetch(
+            "SELECT id, bot_name, bot_token, client_type FROM clients "
+            "WHERE is_active=1 AND bot_token NOT LIKE 'pending_%'"
+        )
+    return [dict(r) for r in rows]
+
+
+async def deactivate_client(username):
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await conn.execute("UPDATE clients SET is_active=0 WHERE username=$1", username.lower())
     return result != "UPDATE 0"
 
 
-async def restore_client(username) -> bool:
+async def restore_client(username):
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await conn.execute("UPDATE clients SET is_active=1 WHERE username=$1", username.lower())
     return result != "UPDATE 0"
 
 
-async def delete_client(username) -> bool:
+async def delete_client(username):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT id FROM clients WHERE username=$1", username.lower())
@@ -204,7 +206,7 @@ async def delete_client(username) -> bool:
     return True
 
 
-async def update_bot_token(client_id: int, token: str) -> bool:
+async def update_bot_token(client_id: int, token: str):
     pool = await get_pool()
     async with pool.acquire() as conn:
         await conn.execute("UPDATE clients SET bot_token=$1 WHERE id=$2", token, client_id)
@@ -218,14 +220,14 @@ async def get_client_by_id(client_id: int):
     return dict(row) if row else None
 
 
-async def get_settings(client_id) -> dict:
+async def get_settings(client_id):
     pool = await get_pool()
     async with pool.acquire() as conn:
         row = await conn.fetchrow("SELECT * FROM bot_settings WHERE client_id=$1", client_id)
     return dict(row) if row else {}
 
 
-async def update_settings(client_id, **kwargs) -> bool:
+async def update_settings(client_id, **kwargs):
     if not kwargs:
         return False
     valid = {k: v for k, v in kwargs.items() if v is not None}
@@ -243,7 +245,7 @@ async def update_settings(client_id, **kwargs) -> bool:
     return True
 
 
-async def add_promo(client_id, code, discount) -> bool:
+async def add_promo(client_id, code, discount):
     try:
         pool = await get_pool()
         async with pool.acquire() as conn:
@@ -258,7 +260,7 @@ async def add_promo(client_id, code, discount) -> bool:
         return False
 
 
-async def delete_promo(client_id, code) -> bool:
+async def delete_promo(client_id, code):
     pool = await get_pool()
     async with pool.acquire() as conn:
         result = await conn.execute(
@@ -267,7 +269,7 @@ async def delete_promo(client_id, code) -> bool:
     return result != "DELETE 0"
 
 
-async def get_promos(client_id) -> list:
+async def get_promos(client_id):
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch("SELECT code, discount FROM promocodes WHERE client_id=$1", client_id)
@@ -284,7 +286,7 @@ async def check_promo(client_id, code):
     return row["discount"] if row else None
 
 
-async def add_track(client_id, order_id, track_num) -> bool:
+async def add_track(client_id, order_id, track_num):
     try:
         pool = await get_pool()
         async with pool.acquire() as conn:
@@ -308,22 +310,11 @@ async def get_track(client_id, order_id):
     return row["track_num"] if row else None
 
 
-async def get_all_tracks(client_id) -> list:
+async def get_all_tracks(client_id):
     pool = await get_pool()
     async with pool.acquire() as conn:
         rows = await conn.fetch(
             "SELECT order_id, track_num FROM tracks WHERE client_id=$1", client_id
-        )
-    return [dict(r) for r in rows]
-
-
-async def get_all_active_bots() -> list:
-    """Возвращает список активных клиентов с их токенами (для запуска ботов)."""
-    pool = await get_pool()
-    async with pool.acquire() as conn:
-        rows = await conn.fetch(
-            "SELECT id, bot_name, bot_token, client_type FROM clients "
-            "WHERE is_active=1 AND bot_token NOT LIKE 'pending_%'"
         )
     return [dict(r) for r in rows]
 
