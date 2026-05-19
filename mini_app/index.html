@@ -165,6 +165,7 @@
   <div class="login-logo">🤖</div>
   <div class="login-title">Панель управления</div>
   <div class="login-subtitle">Введите код доступа и токен вашего бота</div>
+  <div id="usernameInfo" style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:center;"></div>
   <div class="login-hint">Код доступа</div>
   <input class="login-input" id="codeInput" type="text" placeholder="Например: SHOP2024" maxlength="20">
   <div class="login-hint">Токен бота (от @BotFather)</div>
@@ -496,8 +497,16 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 let INIT_DATA = tg.initData || 'dev'; // будет заменён session_token после входа
 const API = '';
-const TG_USERNAME = tg.initDataUnsafe?.user?.username || 'user';
-const SKEY = 'bp_' + TG_USERNAME;
+const TG_USERNAME = tg.initDataUnsafe?.user?.username || '';
+const SKEY = 'bp_' + (TG_USERNAME || 'user');
+
+// Показываем username клиенту чтобы он знал что нужно сообщить владельцу бота
+const uInfo = document.getElementById('usernameInfo');
+if (TG_USERNAME) {
+  uInfo.innerHTML = '👤 Ваш Telegram: <b>@' + TG_USERNAME + '</b><br><span style="font-size:11px">Именно этот username должен быть указан при регистрации</span>';
+} else {
+  uInfo.innerHTML = '⚠️ <b>У вас нет username в Telegram!</b><br><span style="font-size:11px">Зайдите в Настройки Telegram → установите имя пользователя</span>';
+}
 
 let CLIENT_ID=null, settings={}, promos=[], tracks=[], faqItems=[];
 let rememberMe=false;
@@ -600,9 +609,13 @@ async function doLogin() {
   const btn=document.getElementById('loginBtn');
   btn.disabled=true;btn.textContent='Проверяем...';err.textContent='';
   try {
+    if (!TG_USERNAME) {err.textContent='❌ У вас нет username в Telegram. Установите его в настройках.';btn.disabled=false;btn.textContent='Войти в панель';return;}
     const r=await fetch(API+'/api/auth',{method:'POST',headers:{'Content-Type':'application/json','x-init-data':INIT_DATA},body:JSON.stringify({code,username:TG_USERNAME,token})});
     const data=await r.json();
-    if(!r.ok||!data.client_id){err.textContent='❌ '+(data.detail||'Неверный код');btn.disabled=false;btn.textContent='Войти в панель';return;}
+    if(!r.ok||!data.client_id){
+      err.innerHTML='❌ '+(data.detail||'Неверный код')+'<br><span style="font-size:11px;opacity:.8">Ваш username: @'+TG_USERNAME+'<br>Убедитесь что именно он указан при регистрации</span>';
+      btn.disabled=false;btn.textContent='Войти в панель';return;
+    }
     CLIENT_ID=data.client_id;
     INIT_DATA=data.session_token;  // теперь шлём session_token вместо tg.initData
     const botName=data.bot_name||'Мой магазин';

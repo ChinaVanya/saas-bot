@@ -423,13 +423,6 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 
 
-      document.getElementById('shopName').textContent = s.botName || 'Магазин';
-      await loadAll();
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainScreen').style.display = 'block';
-    }
-  } catch { localStorage.removeItem(SKEY); }
-});
 
 document.getElementById('codeInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('tokenInput').focus(); });
 document.getElementById('tokenInput').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
