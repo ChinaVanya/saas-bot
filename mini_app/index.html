@@ -619,7 +619,7 @@ async function doLogin() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
-  } catch { err.textContent = '❌ Ошибка соединения'; btn.disabled = false; btn.textContent = 'Войти в панель'; }
+  } catch(e) { err.textContent = '❌ ' + (e.message || 'Ошибка соединения'); btn.disabled = false; btn.textContent = 'Войти в панель'; }
 }
 
 function switchTab(name) {

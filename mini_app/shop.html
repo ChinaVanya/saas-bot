@@ -395,12 +395,16 @@ window.addEventListener('DOMContentLoaded', async () => {
       document.getElementById('shopName').textContent = botName;
       saveSession(CLIENT_ID, botName, SESSION);
       window.history.replaceState({}, '', '/shop');
-      await loadAll();
-      document.getElementById('loginScreen').style.display = 'none';
-      document.getElementById('mainScreen').style.display = 'block';
+      try {
+        await loadAll();
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('mainScreen').style.display = 'block';
+      } catch(e) {
+        document.getElementById('loginError').textContent = '❌ Ошибка загрузки: ' + e.message;
+      }
       return;
     }
-  } catch {}
+  } catch(e) { document.getElementById('loginError').textContent = '❌ ' + e.message; }
   // Восстановление из localStorage
   try {
     const s = getSession();
@@ -447,8 +451,8 @@ async function doLogin() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
-  } catch {
-    err.textContent = '❌ Ошибка соединения';
+  } catch(e) {
+    err.textContent = '❌ ' + (e.message || 'Ошибка соединения');
     btn.disabled = false; btn.textContent = 'Войти в панель';
   }
 }
