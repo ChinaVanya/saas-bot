@@ -18,25 +18,12 @@
   .welcome-sub{font-size:15px;color:var(--muted);text-align:center;}
   @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
   @keyframes bounceIn{0%{transform:scale(0)}70%{transform:scale(1.2)}100%{transform:scale(1)}}
-  .login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:30px 24px;}
-  .login-logo{font-size:48px;margin-bottom:20px;}
-  .login-title{font-size:24px;font-weight:800;margin-bottom:8px;text-align:center;}
-  .login-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.5;}
-  .login-hint{font-size:12px;color:var(--muted);text-align:left;width:100%;margin-bottom:6px;padding-left:4px;}
-  .login-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;color:var(--text);font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-align:center;outline:none;margin-bottom:12px;text-transform:uppercase;transition:border-color .2s;}
-  .login-input.token-input{text-transform:none;font-size:13px;letter-spacing:0;font-weight:500;}
-  .login-input:focus{border-color:var(--accent);}
+  .login-input.login-input:focus{border-color:var(--accent);}
   .login-input::placeholder{letter-spacing:0;font-weight:400;font-size:13px;color:var(--muted);text-transform:none;}
-  .login-btn{width:100%;padding:16px;background:var(--accent);border:none;border-radius:var(--radius);color:#fff;font-family:'Manrope',sans-serif;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(108,99,255,.4);transition:all .2s;margin-top:4px;}
   .login-btn:active{transform:scale(.97);}
   .login-btn:disabled{opacity:.5;cursor:not-allowed;}
-  .login-error{margin-top:12px;color:var(--red);font-size:13px;font-weight:600;text-align:center;min-height:20px;}
-  .remember-row{display:flex;align-items:center;gap:10px;margin-top:16px;cursor:pointer;width:100%;}
-  .custom-checkbox{width:20px;height:20px;border-radius:6px;border:2px solid var(--border);background:var(--surface2);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;}
   .custom-checkbox.checked{background:var(--accent);border-color:var(--accent);}
   .custom-checkbox.checked::after{content:'✓';color:#fff;font-size:12px;font-weight:800;}
-  .remember-label{font-size:13px;color:var(--muted);}
-
   /* MAIN */
   .main-screen{display:none;padding-bottom:80px;}
   .header{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 20px 12px;position:sticky;top:0;z-index:100;}
@@ -153,8 +140,6 @@
   <div class="welcome-sub" id="welcomeShopName"></div>
 </div>
 
-<div class="login-screen" id="loginScreen" style="display:none;">
-  <div class="login-error" id="loginError"></div>
 </div>
 
 <!-- MAIN -->
@@ -461,7 +446,6 @@ async function doLogin() {
     document.getElementById('shopName').textContent = botName;
     saveSession(CLIENT_ID, botName, SESSION);
     await loadAll();
-    document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('mainScreen').style.display = 'block';
     tg.HapticFeedback.notificationOccurred('success');
   } catch(e) {

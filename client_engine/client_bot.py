@@ -29,7 +29,11 @@ dp = Dispatcher(storage=MemoryStorage())
 
 @dp.message(CommandStart())
 async def cmd_start(message: Message):
-    await message.answer("👋 Добро пожаловать!\n\nНажмите кнопку ниже чтобы войти в панель управления:", reply_markup=ReplyKeyboardRemove())
+    await message.answer("👋 Добро пожаловать!\n\nНажмите кнопку ниже чтобы войти в панель управления:", reply_markup=panel_kb())
+
+@dp.message(F.text)
+async def any_message(message: Message):
+    await message.answer("Используйте кнопку ниже:", reply_markup=panel_kb())
 
 
 async def main():
